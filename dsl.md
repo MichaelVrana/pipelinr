@@ -158,3 +158,19 @@ stage(input = merge(data), body = function (input) {
     # input == tibble(x = 1:6, y = 9:4)
 })
 ```
+
+### `cross`
+
+Given two iterables it creates their cartesian product.
+
+```R
+list1 <- list(1, 2)
+list2 <- list("a", "b")
+
+stage(input = cross(list1, list2) %>% map, body = function (input) {
+    # 1. input == list(1, "a")
+    # 2. input == list(1, "b")
+    # 3. input == list(2, "a")
+    # 4. input == list(2, "b")
+})
+```
