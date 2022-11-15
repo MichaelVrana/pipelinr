@@ -1,10 +1,10 @@
 # R Pipeline DSL
 
-The DSL is used to specifies stages of data processing pipeline and dependencies among those stages. The pipeline consists of multiple stages and each stage has 0..n inputs from other stages. Stages must form a DAG, eg cycles are forbidden.
+The DSL is used to specifies stages of data processing pipeline and dependencies among those stages. The pipeline consists of multiple stages and each stage can have 0..n inputs from other stages. Stages must form a DAG, eg cycles are forbidden.
 
 ## Stage
 
-Stage is constructed using the `stage` function.
+Stage is the main building block of pipelines. Each stage can produce multiple tasks which can be executed in parallel. It is constructed using the `stage` function.
 
 ```R
 function stage(body = (...inputs) -> Any, ...inputs)
@@ -82,7 +82,7 @@ run_pipeline(pipeline, ...params)
 
 **TODO**: should we call the input generators or input operators?
 
-Each pipeline stage can generate multiple tasks which can be executed in parallel. You can use task generators to preprocess inputs and to map them to multiple tasks.
+Each pipeline stage can generate multiple tasks which can be executed in parallel. You can use input generators to preprocess inputs and to map them to multiple tasks in a given stage.
 
 ### `map`
 
@@ -125,11 +125,11 @@ If a `stage` has multiple inputs, all of its outputs will be returned as a list.
 
 Metadata input generator takes an output from previous stage and returns the output with its execution metadata.
 
-**TODO**: What about metadata for a single task vs metadata for the whole stage? If it is given the whole output from the previous stage, should it just get metadata for each task in the given stage, eg given a list of outputs, should it map each output to its metadata?
+**TODO**: What about metadata for a single task output vs metadata for the whole stage? If the generator is given the whole output from the previous stage, should it just get metadata for each task in the given stage, eg given a list of outputs, should it map each output to its metadata?
 
 ### `failed`
 
-Takes a previous stage output and filters out those outputs, that failed during execution. Also maps the outputs to its metadata.
+Takes a previous stage output and filters out those outputs, that failed during execution. Also maps each output to its metadata.
 
 ### `filter`
 
