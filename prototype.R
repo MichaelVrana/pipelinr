@@ -51,7 +51,9 @@ with_deps <- function(stages) {
 }
 
 topsort <- function(stages) {
-    if (is_empty(stages)) return(list())
+    if (is_empty(stages)) {
+        return(list())
+    }
 
     partitioned_stages <- partition(stages, function(stage) is_empty(stage$deps))
 
@@ -87,15 +89,35 @@ make_pipeline <- function(...) {
     list(stages = stages, exec_order = topsort(stages))
 }
 
-stage1 <- stage(body = function(x) x, inputs = c(str = "abc", number = 1))
+run_pipeline <- function(pipeline) {
+    reduce(pipeline$exec_order, function(stage_results, stage) {
+        inputs_expr <- quo_get_expr(stage$inputs_quo)
+        inputs_env <- quo_get_env(stage$inputs_quo)
+
+        eval_env <- new_environment(data = stage_results, parent = inputs_env)
+
+        inputs <- eval(inputs_expr, envir = eval_env)
+        result <- do.call(stage$body, inputs)
+
+        new_results = c(stage_results)
+        new_results[[stage$name]] <- result
+        new_results
+    }, .init = list())
+}
+
+stage1 <- stage(body = function(x) x, inputs = list(x = 1))
 
 stage2 <- stage(body = function(x) {
-    x + 1
-}, inputs = c(x = a))
+    print(x + 1)
+    x
+}, inputs = list(x = a))
 
 pipeline <- make_pipeline(
-    a = stage1,
-    b = stage2
+    a = stage(body = function (x) x, inputs = list(x = 1)),
+    b = stage(inputs = list(y = a + 2), body = function (y) {
+        print(y + 1)
+        y + 1
+    })
 )
 
-print(pipeline)
+run_pipeline(pipeline)
