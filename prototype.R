@@ -25,11 +25,13 @@ find_symbols <- function(expr) {
     map(as.list(expr), find_symbols) %>% flatten()
 }
 
-stage <- function(body, inputs = list()) c(body = body, inputs_quo = enquo(inputs))
+stage_inputs <- function(...) enquos(...)
 
-find_deps <- function(stage, other_stage_names) {
-    inputs_expr <- quo_get_expr(stage$inputs_quo)
-    inputs_env <- quo_get_env(stage$inputs_quo)
+stage <- function(body, inputs) list(body = body, input_quosures = inputs)
+
+find_deps <- function(input_quo, other_stage_names) {
+    inputs_expr <- quo_get_expr(input_quo)
+    inputs_env <- quo_get_env(input_quo)
 
     symbols <- find_symbols(inputs_expr)
 
@@ -48,8 +50,8 @@ with_deps <- function(stages) {
     map(stages, function(stage) {
         other_stage_names <- discard(stage_names, function(name) name == stage$name)
 
-        deps <- find_deps(stage, other_stage_names)
-        c(stage, deps = list(deps))
+        deps <- map(stage$input_quosures, function(input_quo) find_deps(input_quo, other_stage_names))
+        c(stage, deps = deps)
     })
 }
 
@@ -99,13 +101,21 @@ is_mapped <- function(input) {
     !is.null(input_as_list$is_mapped) && input_as_list$is_mapped
 }
 
-eval_inputs <- function(stage_results, inputs_quo) {
-    inputs_expr <- quo_get_expr(inputs_quo)
-    inputs_env <- quo_get_env(inputs_quo)
+eval_inputs <- function(stage_results, input_quosures) {
+    inputs <- map(input_quosures, function(input_quo) {
+        inputs_expr <- quo_get_expr(input_quo)
+        inputs_env <- quo_get_env(input_quo)
 
-    eval_env <- new_environment(data = stage_results, parent = inputs_env)
+        eval_env <- new_environment(data = stage_results, parent = inputs_env)
 
-    inputs <- eval(inputs_expr, envir = eval_env)
+        input <- eval(inputs_expr, envir = eval_env)
+
+        if (is_iterator(input)) {
+            return(input)
+        }
+
+        make_iter(input)
+    })
 
     processed_inputs <- map(inputs, function(input) {
         if (is_mapped(input)) {
@@ -122,7 +132,7 @@ eval_inputs <- function(stage_results, inputs_quo) {
 
 run_pipeline <- function(pipeline) {
     reduce(pipeline$exec_order, function(stage_results, stage) {
-        inputs <- eval_inputs(stage_results, stage$inputs_quo)
+        inputs <- eval_inputs(stage_results, stage$input_quosures)
 
         result <- map(inputs$inputs, function(input) do.call(stage$body, input))
 
