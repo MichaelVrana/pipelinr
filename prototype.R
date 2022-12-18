@@ -1,6 +1,8 @@
 library(rlang)
 library(purrr)
 
+source("iterator.R")
+
 partition <- function(iterable, predicate) {
     reduce(iterable, function(acc, curr) {
         if (predicate(curr)) {
@@ -15,14 +17,15 @@ find_symbols <- function(expr) {
     if (is_syntactic_literal(expr)) {
         return(list())
     }
+
     if (is.symbol(expr)) {
         return(list(as_string(expr)))
     }
 
-    flatten(map(as.list(expr), find_symbols))
+    map(as.list(expr), find_symbols) %>% flatten()
 }
 
-stage <- function(body, inputs) c(body = body, inputs_quo = enquo(inputs))
+stage <- function(body, inputs = list()) c(body = body, inputs_quo = enquo(inputs))
 
 find_deps <- function(stage, other_stage_names) {
     inputs_expr <- quo_get_expr(stage$inputs_quo)
@@ -89,35 +92,42 @@ make_pipeline <- function(...) {
     list(stages = stages, exec_order = topsort(stages))
 }
 
+mapped_input <- function(iterable) list(input = iterable, is_mapped = TRUE)
+
+is_mapped <- function(input) {
+    input_as_list <- as.list(input)
+    !is.null(input_as_list$is_mapped) && input_as_list$is_mapped
+}
+
+eval_inputs <- function(stage_results, inputs_quo) {
+    inputs_expr <- quo_get_expr(inputs_quo)
+    inputs_env <- quo_get_env(inputs_quo)
+
+    eval_env <- new_environment(data = stage_results, parent = inputs_env)
+
+    inputs <- eval(inputs_expr, envir = eval_env)
+
+    processed_inputs <- map(inputs, function(input) {
+        if (is_mapped(input)) {
+            input$input
+        } else {
+            list(input)
+        }
+    }) %>% transpose()
+
+    contains_mapped_input <- some(inputs, is_mapped)
+
+    list(contains_mapped_input = contains_mapped_input, inputs = processed_inputs)
+}
+
 run_pipeline <- function(pipeline) {
     reduce(pipeline$exec_order, function(stage_results, stage) {
-        inputs_expr <- quo_get_expr(stage$inputs_quo)
-        inputs_env <- quo_get_env(stage$inputs_quo)
+        inputs <- eval_inputs(stage_results, stage$inputs_quo)
 
-        eval_env <- new_environment(data = stage_results, parent = inputs_env)
+        result <- map(inputs$inputs, function(input) do.call(stage$body, input))
 
-        inputs <- eval(inputs_expr, envir = eval_env)
-        result <- do.call(stage$body, inputs)
-
-        new_results = c(stage_results)
-        new_results[[stage$name]] <- result
+        new_results <- c(stage_results)
+        new_results[[stage$name]] <- if (inputs$contains_mapped_input) mapped(result) else result
         new_results
     }, .init = list())
 }
-
-stage1 <- stage(body = function(x) x, inputs = list(x = 1))
-
-stage2 <- stage(body = function(x) {
-    print(x + 1)
-    x
-}, inputs = list(x = a))
-
-pipeline <- make_pipeline(
-    a = stage(body = function (x) x, inputs = list(x = 1)),
-    b = stage(inputs = list(y = a + 2), body = function (y) {
-        print(y + 1)
-        y + 1
-    })
-)
-
-run_pipeline(pipeline)
