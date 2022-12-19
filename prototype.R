@@ -27,7 +27,7 @@ find_symbols <- function(expr) {
 
 stage_inputs <- function(...) enquos(...)
 
-stage <- function(body, inputs) list(body = body, input_quosures = inputs)
+stage <- function(body, inputs = stage_inputs()) list(body = body, input_quosures = inputs)
 
 find_deps <- function(input_quo, other_stage_names) {
     inputs_expr <- quo_get_expr(input_quo)
@@ -51,7 +51,7 @@ with_deps <- function(stages) {
         other_stage_names <- discard(stage_names, function(name) name == stage$name)
 
         deps <- map(stage$input_quosures, function(input_quo) find_deps(input_quo, other_stage_names))
-        c(stage, deps = deps)
+        c(stage, deps = unique(deps))
     })
 }
 
@@ -94,15 +94,8 @@ make_pipeline <- function(...) {
     list(stages = stages, exec_order = topsort(stages))
 }
 
-mapped_input <- function(iterable) list(input = iterable, is_mapped = TRUE)
-
-is_mapped <- function(input) {
-    input_as_list <- as.list(input)
-    !is.null(input_as_list$is_mapped) && input_as_list$is_mapped
-}
-
 eval_inputs <- function(stage_results, input_quosures) {
-    inputs <- map(input_quosures, function(input_quo) {
+    input_iters <- map(input_quosures, function(input_quo) {
         inputs_expr <- quo_get_expr(input_quo)
         inputs_env <- quo_get_env(input_quo)
 
@@ -117,27 +110,33 @@ eval_inputs <- function(stage_results, input_quosures) {
         make_iter(input)
     })
 
-    processed_inputs <- map(inputs, function(input) {
-        if (is_mapped(input)) {
-            input$input
-        } else {
-            list(input)
-        }
-    }) %>% transpose()
+    input_iters
+}
 
-    contains_mapped_input <- some(inputs, is_mapped)
+run_stage <- function(stage, input_iters, results = list()) {
+    all_input_iters_done <- every(input_iters, function(iter) iter$done)
 
-    list(contains_mapped_input = contains_mapped_input, inputs = processed_inputs)
+    if (all_input_iters_done) {
+        return(results)
+    }
+
+    input <- map(input_iters, function(iter) iter$value)
+
+    result <- do.call(stage$body, input)
+
+    next_iters <- map(input_iters, function(iter) iter$next_iter())
+
+    run_stage(stage, next_iters, append(results, list(result)))
 }
 
 run_pipeline <- function(pipeline) {
     reduce(pipeline$exec_order, function(stage_results, stage) {
-        inputs <- eval_inputs(stage_results, stage$input_quosures)
+        input_iters <- eval_inputs(stage_results, stage$input_quosures)
 
-        result <- map(inputs$inputs, function(input) do.call(stage$body, input))
+        results_iter <- run_stage(stage, input_iters) %>% vec_to_iter()
 
         new_results <- c(stage_results)
-        new_results[[stage$name]] <- if (inputs$contains_mapped_input) mapped(result) else result
+        new_results[[stage$name]] <- results_iter
         new_results
     }, .init = list())
 }

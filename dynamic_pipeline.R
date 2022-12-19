@@ -7,15 +7,28 @@ data <- list(
 )
 
 pipeline <- make_pipeline(
-    stage1 = stage(inputs = list(x = mapped(data)), body = function(x) {
+    stage1 = stage(inputs = stage_inputs(x = data %>% vec_to_iter()), body = function(x) {
         print("stage1 called")
         print(x)
         list(number = x$number * 2, str = x$str)
     }),
-    stage2 = stage(inputs = list(x = stage1), body = function(x) {
+    stage2 = stage(inputs = stage_inputs(x = stage1), body = function(x) {
         print("stage2 called")
         print(x)
-    })
+    }),
+    stage3 = stage(
+        inputs = stage_inputs(
+            single_elem = stage2,
+            collected = stage2 %>% collect_iter()
+        ),
+        body = function(single_elem, collected) {
+            print("stage3 called")
+            print("single_elem")
+            print(single_elem)
+            print("collected")
+            print(collected)
+        }
+    )
 )
 
 run_pipeline(pipeline)

@@ -57,15 +57,4 @@ filter_iter <- function(iter, predicate) {
     })
 }
 
-flatten_iter <- function(iter) {
-    fold_right_iter(iter, make_empty_iter(), function(next_iter, curr) {
-        fold
-    })
-}
-
 is_iterator <- function(iter_like) is_list(iter_like) && is_function(iter_like$next_iter) && is_logical(iter_like$done)
-
-transpose_iter <- function(...) {
-    collected <- map(list(...), collect_iter) %>% transpose()
-    
-}
