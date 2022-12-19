@@ -58,3 +58,5 @@ filter_iter <- function(iter, predicate) {
 }
 
 is_iterator <- function(iter_like) is_list(iter_like) && is_function(iter_like$next_iter) && is_logical(iter_like$done)
+
+cross_iter <- function(iter1, iter2) cross2(collect_iter(iter1), collect_iter(iter2)) %>% vec_to_iter()
