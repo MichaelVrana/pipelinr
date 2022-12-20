@@ -114,19 +114,21 @@ eval_inputs <- function(stage_results, input_quosures) {
 }
 
 run_stage <- function(stage, input_iters, results = list()) {
-    all_input_iters_done <- every(input_iters, function(iter) iter$done)
-
-    if (all_input_iters_done) {
-        return(results)
-    }
-
     input <- map(input_iters, function(iter) iter$value)
 
     result <- do.call(stage$body, input)
 
     next_iters <- map(input_iters, function(iter) iter$next_iter())
 
-    run_stage(stage, next_iters, append(results, list(result)))
+    all_iters_done <- every(next_iters, function(iter) iter$done)
+
+    next_results <- append(results, list(result))
+
+    if (all_iters_done) {
+        return(next_results)
+    }
+
+    run_stage(stage, next_iters, next_results)
 }
 
 run_pipeline <- function(pipeline) {
@@ -140,3 +142,5 @@ run_pipeline <- function(pipeline) {
         new_results
     }, .init = list())
 }
+
+mapped <- function(input) vec_to_iter(input$value)
