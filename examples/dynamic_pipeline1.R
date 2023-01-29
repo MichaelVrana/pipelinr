@@ -1,4 +1,4 @@
-source("prototype.R")
+source("./dsl/prototype.R")
 
 data <- list(
     list(number = 1, str = "a"),

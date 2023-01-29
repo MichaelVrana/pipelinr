@@ -1,7 +1,7 @@
 library(rlang)
 library(purrr)
 
-source("iterator.R")
+source("./dsl/iterator.R")
 
 partition <- function(iterable, predicate) {
     reduce(iterable, function(acc, curr) {

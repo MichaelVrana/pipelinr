@@ -1,0 +1,3 @@
+library(rextendr)
+
+rextendr::document()

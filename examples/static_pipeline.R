@@ -1,4 +1,4 @@
-source("prototype.R")
+source("./dsl/prototype.R")
 
 pipeline <- make_pipeline(
     a = stage(inputs = stage_inputs(x = 1), body = function(x) x),
