@@ -27,7 +27,11 @@ find_symbols <- function(expr) {
 
 stage_inputs <- function(...) enquos(...)
 
-stage <- function(body, inputs = stage_inputs()) list(body = body, input_quosures = inputs)
+stage <- function(body, inputs = stage_inputs()) structure(
+    list(body = body, input_quosures = inputs),
+    body = body,
+    input_quosures = inputs
+)
 
 find_deps <- function(input_quo, other_stage_names) {
     inputs_expr <- quo_get_expr(input_quo)

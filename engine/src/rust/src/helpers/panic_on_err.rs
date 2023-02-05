@@ -12,3 +12,4 @@ impl<T, E: Display> PanicOnErr<T> for Result<T, E> {
         }
     }
 }
+
