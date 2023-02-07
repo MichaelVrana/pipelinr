@@ -12,7 +12,7 @@ impl From<Robj> for Task {
             .as_list()
             .unwrap_or_else(|| panic!("Task object must be a list"));
 
-        Task {
+        Self {
             args: list
                 .get_named("args")
                 .unwrap_or_else(|| panic!("Task object is missing args"))
