@@ -11,7 +11,7 @@
 #' @useDynLib engine, .registration = TRUE
 NULL
 
-gnu_parallel_run_pipeline <- function(pipeline) .Call(wrap__gnu_parallel_run_pipeline, pipeline)
+gnu_parallel_run_task_group <- function(task_group_obj) .Call(wrap__gnu_parallel_run_task_group, task_group_obj)
 
 
 # nolint end

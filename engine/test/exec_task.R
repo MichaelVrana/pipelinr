@@ -1,0 +1,22 @@
+library(tools)
+library(qs)
+
+args <- commandArgs(trailingOnly = TRUE)
+
+task_filename <- args[[1]]
+
+task <- qload(task_filename)
+
+if (typeof(task$body) != "closure") {
+    stop("Task is missing a body function or it's not a function")
+}
+
+if (typeof(task$args) != "list") {
+    stop("Task is missing an args list or it's not a list")
+}
+
+result <- do.call(task$body, task$args)
+
+result_filename <- paste(file_path_sans_ext(task_filename), ".out.qs", sep = "")
+
+qsave(list(result = result), result_filename)
