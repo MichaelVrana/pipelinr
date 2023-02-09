@@ -9,11 +9,11 @@ hostnames=$(docker network inspect test_default | jq '.[0].Containers[] | "\(.Na
 
 echo "Host *
     User worker
-    IdentityFile ./id_rsa_test
+    IdentityFile $(pwd)/id_rsa_test
     StrictHostKeyChecking=no
     UserKnownHostsFile=/dev/null
     LogLevel ERROR
 
-`sed -r 's/(.*) (.*)/Host \1\n    Hostname \2\n/g' <<< $hostnames`" > ssh.config
+$(sed -r 's/(.*) (.*)/Host \1\n    Hostname \2\n/g' <<< $hostnames)" > ssh.config
 
 sed -r 's/(.*) .*/1\/ \1/g' <<< $hostnames > nodefile

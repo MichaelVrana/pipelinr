@@ -7,12 +7,15 @@ mod gnu_parallel;
 
 use extendr_api::{
     prelude::{extendr, extendr_module},
-    R, Robj,
+    Robj,
 };
+use gnu_parallel::gnu_parallel::GNUParallel;
 
 #[extendr]
-fn gnu_parallel_run_task_group(task_group_obj: Robj) -> Robj {
-    R!("NULL").unwrap()
+fn gnu_parallel_run_task_group(parallel_params: Robj, task_group: Robj) -> Robj {
+    GNUParallel::new(parallel_params.into())
+        .run_task_group(&task_group.into())
+        .into_robj()
 }
 
 extendr_module! {

@@ -22,7 +22,14 @@ impl From<Robj> for TaskGroup {
             .unwrap_or_else(|| panic!("Task group ID must be a string"))
             .to_string();
 
-        let tasks: Vec<Task> = list.iter().map(|(_, obj)| obj.into()).collect();
+        let tasks: Vec<Task> = list
+            .get_named("tasks")
+            .unwrap_or_else(|| panic!("Task group object must containt tasks"))
+            .as_list()
+            .unwrap_or_else(|| panic!("Task group tasks object must be a list"))
+            .iter()
+            .map(|(_, obj)| obj.into())
+            .collect();
 
         Self { id, tasks }
     }
