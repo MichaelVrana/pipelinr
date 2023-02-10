@@ -17,6 +17,6 @@ if (typeof(task$args) != "list") {
 
 result <- do.call(task$body, task$args)
 
-result_filename <- paste(file_path_sans_ext(task_filename), ".out.qs", sep = "")
+result_filename <- paste(file_path_sans_ext(task_filename), "_out.qs", sep = "")
 
 qsave(list(result = result), result_filename)

@@ -11,7 +11,7 @@
 #' @useDynLib engine, .registration = TRUE
 NULL
 
-gnu_parallel_run_task_group <- function(parallel_params, task_group) .Call(wrap__gnu_parallel_run_task_group, parallel_params, task_group)
+gnu_parallel_run_task_group <- function(task_group, ssh_login_file) .Call(wrap__gnu_parallel_run_task_group, task_group, ssh_login_file)
 
 
 # nolint end
