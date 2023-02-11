@@ -1,11 +1,11 @@
 library(tools)
-library(qs)
+suppressPackageStartupMessages(library(qs))
 
 args <- commandArgs(trailingOnly = TRUE)
 
 task_filename <- args[[1]]
 
-task <- qload(task_filename)
+task <- qread(task_filename)
 
 if (typeof(task$body) != "closure") {
     stop("Task is missing a body function or it's not a function")

@@ -15,7 +15,7 @@ impl GNUParallel {
     pub fn run_task_group(&self, task_group: &TaskGroup) -> List {
         let mut command = Command::new("parallel");
 
-        let dir_path = Path::new("gnu_parallel_tasks").join(task_group.id.clone());
+        let dir_path = Path::new("pipeline").join(task_group.id.clone());
 
         command.current_dir(dir_path.clone());
 
@@ -30,12 +30,12 @@ impl GNUParallel {
                 "--trc",
                 "{.}_out.qs",
                 "Rscript",
-                "exec_task.R",
+                "./exec_task_and_collect_metadata.sh",
                 "{}",
                 ":::",
             ]);
         } else {
-            command.args(["Rscript", "TODO/exec_task.R", "{}", ":::"]);
+                command.args(["Rscript", "TODO/exec_task_and_collect_metadata.sh", "{}", ":::"]);
         }
 
         call!("library", "qs").panic_on_error();
@@ -65,7 +65,7 @@ impl GNUParallel {
         List::from_iter(task_group.tasks.iter().enumerate().map(|(task_index, _)| {
             let task_result_file_path = dir_path.join(format!("task_{}_out.qs", task_index));
 
-            call!("qload", task_result_file_path.to_str().unwrap()).panic_on_error()
+            call!("qread", task_result_file_path.to_str().unwrap()).panic_on_error()
         }))
     }
 }
