@@ -1,7 +1,11 @@
 use super::options::GNUParallelOptions;
 use crate::{helpers::panic_on_err::PanicOnErr, model::task_group::TaskGroup};
 use extendr_api::prelude::*;
-use std::{fs::create_dir_all, path::Path, process::Command};
+use std::{
+    fs::create_dir_all,
+    path::{Path, PathBuf},
+    process::Command,
+};
 
 pub struct GNUParallel {
     options: GNUParallelOptions,
@@ -12,9 +16,7 @@ impl GNUParallel {
         Self { options: params }
     }
 
-    pub fn run_task_group(&self, task_group: &TaskGroup) -> List {
-        let mut command = Command::new("parallel");
-
+    fn create_task_group_dir(&self, command: &mut Command, task_group: &TaskGroup) -> PathBuf {
         let dir_path = Path::new("pipeline").join(task_group.id.clone());
 
         command.current_dir(dir_path.clone());
@@ -23,23 +25,26 @@ impl GNUParallel {
             rprintln!("Warning: Failed to create GNU Parallel IO directory for task group id {}. Reason: {}", task_group.id, error.to_string());
         }
 
-        if !self.options.ssh_login_file.is_empty() {
-            command.args([
-                "--sshloginfile",
-                format!("../../{}", self.options.ssh_login_file).as_str(),
-                "--trc",
-                "{.}_out.qs",
-                "Rscript",
-                "./exec_task_and_collect_metadata.sh",
-                "{}",
-                ":::",
-            ]);
-        } else {
-                command.args(["Rscript", "TODO/exec_task_and_collect_metadata.sh", "{}", ":::"]);
-        }
+        dir_path
+    }
 
-        call!("library", "qs").panic_on_error();
+    fn add_ssh_args(&self, command: &mut Command) {
+        command.args([
+            "--sshloginfile",
+            format!("../../{}", self.options.ssh_login_file).as_str(),
+            "--trc",
+            "{.}_out.qs",
+            "./exec_task_and_collect_metadata.sh",
+            ":::",
+        ]);
+    }
 
+    fn add_non_ssh_args(&self, command: &mut Command) {
+        panic!("Not implemented");
+        // command.args(["TODO/exec_task_and_collect_metadata.sh", ":::"]);
+    }
+
+    fn add_task_args(&self, command: &mut Command, task_group: &TaskGroup, dir_path: &PathBuf) {
         for (task_idx, task) in task_group.tasks.iter().enumerate() {
             let task_file_name = format!("task_{}.qs", task_idx);
             let task_file_path = dir_path.join(task_file_name.clone());
@@ -50,10 +55,24 @@ impl GNUParallel {
 
             command.arg(task_file_name);
         }
+    }
 
-        let status_result = command.status();
+    pub fn run_task_group(&self, task_group: &TaskGroup) -> List {
+        let mut command = Command::new("parallel");
 
-        let status = status_result.panic_on_error();
+        let dir_path = self.create_task_group_dir(&mut command, task_group);
+
+        if !self.options.ssh_login_file.is_empty() {
+            self.add_ssh_args(&mut command);
+        } else {
+            self.add_non_ssh_args(&mut command);
+        }
+
+        R!("suppressPackageStartupMessages(library(qs))").panic_on_error();
+
+        self.add_task_args(&mut command, task_group, &dir_path);
+
+        let status = command.status().panic_on_error();
 
         if !status.success() {
             panic!(
