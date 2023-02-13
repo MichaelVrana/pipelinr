@@ -13,8 +13,8 @@ task_result_filename <- paste(file_path_sans_ext(task_filename), "_out.qs", sep 
 
 task_result <- qread(task_result_filename)
 
-stdout <- read_file_raw(stdout_filename)
-stderr <- read_file_raw(stderr_filename)
+stdout <- read_file(stdout_filename)
+stderr <- read_file(stderr_filename)
 
 metadata <- list(exit_code = strtoi(exit_code), stdout = stdout, stderr = stderr)
 

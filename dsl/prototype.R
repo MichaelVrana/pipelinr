@@ -27,11 +27,13 @@ find_symbols <- function(expr) {
 
 stage_inputs <- function(...) enquos(...)
 
-stage <- function(body, inputs = stage_inputs()) structure(
-    list(body = body, input_quosures = inputs),
-    body = body,
-    input_quosures = inputs
-)
+stage <- function(body, inputs = stage_inputs()) {
+    structure(
+        list(body = body, input_quosures = inputs),
+        body = body,
+        input_quosures = inputs
+    )
+}
 
 find_deps <- function(input_quo, other_stage_names) {
     inputs_expr <- quo_get_expr(input_quo)
@@ -117,29 +119,45 @@ eval_inputs <- function(stage_results, input_quosures) {
     input_iters
 }
 
-run_stage <- function(stage, input_iters, results = list()) {
+r_engine <- function(task_group) {
+    map(task_group$tasks, function(task) do.call(task$body, task$args)) %>% vec_to_iter()
+}
+
+make_gnu_parallel_engine <- function(ssh_login_file = "") function(task_group) {
+    if (!exists("gnu_parallel_run_task_group")) devtools::load_all("./engine")
+    results <- gnu_parallel_run_task_group(task_group, ssh_login_file)
+
+    map(results, function(result) {
+        print(result$stdout)
+        print(result$stderr)
+        result$result
+    }) %>% vec_to_iter()
+}
+
+get_stage_task_group <- function(stage, input_iters, tasks = list()) {
     input <- map(input_iters, function(iter) iter$value)
 
-    result <- do.call(stage$body, input)
+    task <- list(body = stage$body, args = input)
 
     next_iters <- map(input_iters, function(iter) iter$next_iter())
 
     all_iters_done <- every(next_iters, function(iter) iter$done)
 
-    next_results <- append(results, list(result))
+    next_tasks <- append(tasks, list(task))
 
     if (all_iters_done) {
-        return(next_results)
+        return(list(tasks = next_tasks, id = stage$name))
     }
 
-    run_stage(stage, next_iters, next_results)
+    get_stage_task_group(stage, next_iters, next_tasks)
 }
 
-run_pipeline <- function(pipeline) {
+run_pipeline <- function(pipeline, engine = r_engine) {
     reduce(pipeline$exec_order, function(stage_results, stage) {
         input_iters <- eval_inputs(stage_results, stage$input_quosures)
 
-        results_iter <- run_stage(stage, input_iters) %>% vec_to_iter()
+        task_group <- get_stage_task_group(stage, input_iters)
+        results_iter <- engine(task_group)
 
         new_results <- c(stage_results)
         new_results[[stage$name]] <- results_iter
