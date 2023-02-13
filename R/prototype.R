@@ -2,8 +2,6 @@ library(rlang)
 library(purrr)
 suppressPackageStartupMessages(library(qs))
 
-source("./dsl/iterator.R")
-
 partition <- function(iterable, predicate) {
     reduce(iterable, function(acc, curr) {
         if (predicate(curr)) {
@@ -124,16 +122,19 @@ r_engine <- function(task_group) {
     map(task_group$tasks, function(task) do.call(task$body, task$args)) %>% vec_to_iter()
 }
 
-make_gnu_parallel_engine <- function(ssh_login_file = "") function(task_group) {
-    if (!exists("gnu_parallel_run_task_group")) devtools::load_all("./engine")
-    results <- gnu_parallel_run_task_group(task_group, ssh_login_file)
+make_gnu_parallel_engine <- function(ssh_login_file = "") {
+    function(task_group) {
+        if (!exists("gnu_parallel_run_task_group")) devtools::load_all("./engine")
+        results <- gnu_parallel_run_task_group(task_group, ssh_login_file)
 
-    map(results, function(result) {
-        print(result$stdout)
-        print(result$stderr)
-        result$result
-    }) %>% vec_to_iter()
+        map(results, function(result) {
+            print(result$stdout)
+            print(result$stderr)
+            result$result
+        }) %>% vec_to_iter()
+    }
 }
+
 
 get_stage_task_group <- function(stage, input_iters, tasks = list()) {
     input <- map(input_iters, function(iter) iter$value)
@@ -177,3 +178,7 @@ stage_outputs_iter <- function(stage_id) {
 }
 
 stage_results_iter <- function(stage_id) stage_outputs_iter(stage_id) %>% map_iter(., function(output) output$result)
+
+without_name <- function(list, name) list[grep(name, names(list), invert = TRUE)]
+
+stage_metadata_iter <- function(stage_id) stage_outputs_iter(stage_id) %>% map_iter(., function(output) without_name(output, result))

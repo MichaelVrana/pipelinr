@@ -7,7 +7,7 @@ This repository contains a prototype and a proposal document for an R language p
 The prototype is located in the `prototype.R` file. You can view more complex examples of the prototype in the `examples` directory.
 
 ```{R}
-source("./dsl/prototype.R")
+devtools::load_all()
 ```
 
 To construct a pipeline, specify each stage using the `stage` function. To assemble the stages together into a pipeline use the `make_pipeline` function:

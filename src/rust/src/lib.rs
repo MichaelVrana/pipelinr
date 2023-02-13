@@ -22,6 +22,6 @@ fn gnu_parallel_run_task_group(task_group: Robj, ssh_login_file: Robj) -> Robj {
 }
 
 extendr_module! {
-    mod engine;
+    mod pipelinr;
     fn gnu_parallel_run_task_group;
 }

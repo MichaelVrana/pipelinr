@@ -1,4 +1,4 @@
-source("./dsl/prototype.R")
+devtools::load_all("..")
 
 pipeline <- make_pipeline(
     numbers = stage(body = function(x) {

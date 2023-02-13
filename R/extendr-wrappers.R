@@ -4,11 +4,11 @@
 
 #
 # This file was created with the following call:
-#   .Call("wrap__make_engine_wrappers", use_symbols = TRUE, package_name = "engine")
+#   .Call("wrap__make_pipelinr_wrappers", use_symbols = TRUE, package_name = "pipelinr")
 
 #' @docType package
 #' @usage NULL
-#' @useDynLib engine, .registration = TRUE
+#' @useDynLib pipelinr, .registration = TRUE
 NULL
 
 gnu_parallel_run_task_group <- function(task_group, ssh_login_file) .Call(wrap__gnu_parallel_run_task_group, task_group, ssh_login_file)
