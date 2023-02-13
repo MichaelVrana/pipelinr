@@ -1,4 +1,4 @@
-devtools::load_all("..")
+devtools::load_all()
 
 pipeline <- make_pipeline(
     numbers = stage(body = function(x) {
@@ -8,19 +8,17 @@ pipeline <- make_pipeline(
         list("a", "b")
     }),
     doubled_numbers = stage(
-        inputs = stage_inputs(number = mapped(numbers), string = mapped(strings)),
-        body = function(number, string) {
+        inputs = stage_inputs(number = mapped(numbers)),
+        body = function(number) {
             print("doubled_numbers called")
             print("number")
             print(number)
-            print("string")
-            print(string)
 
             number * 2
         }
     ),
     crossed = stage(
-        inputs = stage_inputs(doubled_nums_with_strs = cross_iter(doubled_numbers, strings)),
+        inputs = stage_inputs(doubled_nums_with_strs = cross_iter(doubled_numbers, mapped(strings))),
         body = function(doubled_nums_with_strs) {
             print("crossed called")
             print(doubled_nums_with_strs)

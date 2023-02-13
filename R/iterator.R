@@ -34,7 +34,7 @@ fold_iter <- function(iter, init, fun) {
     fold(iter, init)
 }
 
-collect_iter <- function(iter) fold_iter(iter, list(), function(acc, curr) c(acc, curr))
+collect_iter <- function(iter) fold_iter(iter, list(), function(acc, curr) c(acc, list(curr)))
 
 reverse_iter <- function(iter) {
     collect_iter(iter) %>%

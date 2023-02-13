@@ -1,4 +1,4 @@
-devtools::load_all("..")
+devtools::load_all()
 
 pipeline <- make_pipeline(
     a = stage(inputs = stage_inputs(x = 1), body = function(x) x),

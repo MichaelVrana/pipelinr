@@ -1,4 +1,4 @@
-devtools::load_all("..")
+devtools::load_all()
 
 data <- list(
     list(number = 1, str = "a"),
@@ -31,4 +31,4 @@ pipeline <- make_pipeline(
     )
 )
 
-run_pipeline(pipeline, engine = make_gnu_parallel_engine("./test/nodefile"))
+results <- run_pipeline(pipeline)
