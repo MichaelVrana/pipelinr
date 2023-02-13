@@ -36,25 +36,15 @@ fold_iter <- function(iter, init, fun) {
 
 collect_iter <- function(iter) fold_iter(iter, list(), function(acc, curr) c(acc, list(curr)))
 
-reverse_iter <- function(iter) {
-    collect_iter(iter) %>%
-        rev() %>%
-        vec_to_iter()
-}
-
-fold_right_iter <- function(iter, init, fun) fold_iter(reverse_iter(iter), init, fun)
-
 map_iter <- function(iter, fun) {
-    fold_right_iter(iter, make_empty_iter(), function(next_iter, value) make_iter(fun(value), next_iter))
+    list(value = fun(iter$value), done = iter$done, next_iter = function() map_iter(iter$next_iter(), fun))
 }
 
 filter_iter <- function(iter, predicate) {
-    fold_right_iter(iter, make_empty_iter(), function(next_iter, value) {
-        if (predicate(value)) {
-            return(make_iter(value, next_iter))
-        }
-        next_iter
-    })
+    if (iter$done) return(make_empty_iter())
+    if (!predicate(iter$value)) return(filter_iter(iter$next_iter(), predicate))
+
+    list(value = iter$value, done = FALSE, next_iter = function() filter_iter(iter$next_iter(), predicate))
 }
 
 is_iterator <- function(iter_like) is_list(iter_like) && is_function(iter_like$next_iter) && is_logical(iter_like$done)
