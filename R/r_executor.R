@@ -10,7 +10,7 @@ eval_inputs <- function(stage_results, input_quosures) {
 
         input <- eval(inputs_expr, envir = eval_env)
 
-        if (is_iterator(input)) {
+        if (is_iter(input)) {
             return(input)
         }
 

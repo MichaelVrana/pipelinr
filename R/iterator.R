@@ -41,12 +41,30 @@ map_iter <- function(iter, fun) {
 }
 
 filter_iter <- function(iter, predicate) {
-    if (iter$done) return(make_empty_iter())
-    if (!predicate(iter$value)) return(filter_iter(iter$next_iter(), predicate))
+    if (iter$done) {
+        return(make_empty_iter())
+    }
+
+    if (!predicate(iter$value)) {
+        return(filter_iter(iter$next_iter(), predicate))
+    }
 
     list(value = iter$value, done = FALSE, next_iter = function() filter_iter(iter$next_iter(), predicate))
 }
 
-is_iterator <- function(iter_like) is_list(iter_like) && is_function(iter_like$next_iter) && is_logical(iter_like$done)
+is_iter <- function(iter_like) is_list(iter_like) && is_function(iter_like$next_iter) && is_logical(iter_like$done)
 
 cross_iter <- function(iter1, iter2) cross2(collect_iter(iter1), collect_iter(iter2)) %>% vec_to_iter()
+
+zip_iter <- function(...) {
+    iters <- list(...)
+
+    done <- every(iters, function(iter) iter$done)
+    values <- map(iters, function(iter) iter$value)
+
+    next_iter <- function() {
+        lift_dl(zip_iter)(map(iters, function(iter) iter$next_iter()))
+    }
+
+    list(value = values, done = done, next_iter = next_iter)
+}
