@@ -57,7 +57,7 @@ impl GNUParallel {
         }
     }
 
-    pub fn run_task_group(&self, task_group: &TaskGroup) -> List {
+    pub fn run_task_group(&self, task_group: &TaskGroup) {
         let mut command = Command::new("parallel");
 
         let dir_path = self.create_task_group_dir(&mut command, task_group);
@@ -80,11 +80,5 @@ impl GNUParallel {
                 status.code().unwrap()
             )
         }
-
-        List::from_iter(task_group.tasks.iter().enumerate().map(|(task_index, _)| {
-            let task_result_file_path = dir_path.join(format!("task_{}_out.qs", task_index));
-
-            call!("qread", task_result_file_path.to_str().unwrap()).panic_on_error()
-        }))
     }
 }

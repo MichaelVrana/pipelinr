@@ -37,7 +37,8 @@ fold_iter <- function(iter, init, fun) {
 collect_iter <- function(iter) fold_iter(iter, list(), function(acc, curr) c(acc, list(curr)))
 
 map_iter <- function(iter, fun) {
-    list(value = fun(iter$value), done = iter$done, next_iter = function() map_iter(iter$next_iter(), fun))
+    if (iter$done) return(make_empty_iter())
+    list(value = fun(iter$value), done = FALSE, next_iter = function() map_iter(iter$next_iter(), fun))
 }
 
 filter_iter <- function(iter, predicate) {
