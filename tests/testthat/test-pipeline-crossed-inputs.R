@@ -19,8 +19,8 @@ test_that("Pipeline evaluates crossed inputs", {
     results <- run_pipeline(pipeline)
 
     stage_results <- run_pipeline(pipeline)
-
-    actual <- collect_iter(stage_results$crossed)
+    
+    actual <- collect_iter(stage_results$results$crossed)
 
     expect_equal(actual, list(
         list(2, "a"),
