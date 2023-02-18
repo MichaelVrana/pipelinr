@@ -1,3 +1,4 @@
+library(utils)
 library(purrr)
 
 vec_tail <- function(vec) {
@@ -37,7 +38,9 @@ fold_iter <- function(iter, init, fun) {
 collect_iter <- function(iter) fold_iter(iter, list(), function(acc, curr) c(acc, list(curr)))
 
 map_iter <- function(iter, fun) {
-    if (iter$done) return(make_empty_iter())
+    if (iter$done) {
+        return(make_empty_iter())
+    }
     list(value = fun(iter$value), done = FALSE, next_iter = function() map_iter(iter$next_iter(), fun))
 }
 
@@ -57,15 +60,69 @@ is_iter <- function(iter_like) is_list(iter_like) && is_function(iter_like$next_
 
 cross_iter <- function(iter1, iter2) cross2(collect_iter(iter1), collect_iter(iter2)) %>% vec_to_iter()
 
+# cross_iter <- function(...) {
+#     original_iters <- list(...)
+
+#     cross <- function(iters) {
+#         if (all(iters, function(iter) iter$done)) return(make_empty_iter())
+
+#         next_iter <- function() {
+#             iterate <- TRUE
+
+#             imap(iters, function(iter, idx) {
+#                 if (!iterate) return(iter)
+                
+#                 new_iter <- iter$next_iter()
+
+#                 if (iter$done) return(original_iters[[idx]])
+                
+#                 iterate <- FALSE
+#                 iter <- 
+#             }) %>% cross()
+#         }
+
+#         list(value = map(iters, function(iter) iter$value, done = false, next_iter = next_iter))
+#     }
+# }
+
 zip_iter <- function(...) {
     iters <- list(...)
 
     done <- every(iters, function(iter) iter$done)
+
+    if (done) {
+        return(make_empty_iter())
+    }
+
     values <- map(iters, function(iter) iter$value)
 
     next_iter <- function() {
-        lift_dl(zip_iter)(map(iters, function(iter) iter$next_iter()))
+        do.call(zip_iter, map(iters, function(iter) iter$next_iter()))
     }
 
     list(value = values, done = done, next_iter = next_iter)
+}
+
+memoize_iter <- function(iter) {
+    next_iter_cache <- list()
+
+    make_memoize_iter <- function(iter, cache_idx = 1) {
+        if (iter$done) {
+            return(make_empty_iter())
+        }
+
+        next_iter <- function() {
+            if (length(next_iter_cache) >= cache_idx) {
+                return(next_iter_cache[[cache_idx]])
+            }
+
+            new_iter <- make_memoize_iter(iter$next_iter(), cache_idx + 1)
+            next_iter_cache[[cache_idx]] <<- new_iter
+            new_iter
+        }
+
+        list(value = iter$value, done = FALSE, next_iter = next_iter)
+    }
+
+    make_memoize_iter(iter)
 }

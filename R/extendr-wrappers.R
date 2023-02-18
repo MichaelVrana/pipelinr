@@ -11,7 +11,7 @@
 #' @useDynLib pipelinr, .registration = TRUE
 NULL
 
-gnu_parallel_run_task_group <- function(task_group, ssh_login_file) invisible(.Call(wrap__gnu_parallel_run_task_group, task_group, ssh_login_file))
+gnu_parallel_run_task_group <- function(task_group, ssh_login_file, pipeline_dir) invisible(.Call(wrap__gnu_parallel_run_task_group, task_group, ssh_login_file, pipeline_dir))
 
 
 # nolint end

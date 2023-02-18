@@ -5,7 +5,7 @@
 
 docker-compose up -d --build
 
-hostnames=$(docker network inspect test_default | jq '.[0].Containers[] | "\(.Name) \(.IPv4Address)"' | sed -r 's/"|(\/.*)//g')
+hostnames=$(docker network inspect test_worker_default | jq '.[0].Containers[] | "\(.Name) \(.IPv4Address)"' | sed -r 's/"|(\/.*)//g')
 
 echo "Host *
     User worker

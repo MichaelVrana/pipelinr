@@ -1,3 +1,0 @@
-library(rextendr)
-
-rextendr::document()

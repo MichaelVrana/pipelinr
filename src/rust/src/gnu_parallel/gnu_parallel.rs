@@ -3,7 +3,7 @@ use crate::{helpers::panic_on_err::PanicOnErr, model::task_group::TaskGroup};
 use extendr_api::prelude::*;
 use std::{
     fs::create_dir_all,
-    path::{Path, PathBuf},
+    path::{PathBuf},
     process::Command,
 };
 
@@ -17,7 +17,7 @@ impl GNUParallel {
     }
 
     fn create_task_group_dir(&self, command: &mut Command, task_group: &TaskGroup) -> PathBuf {
-        let dir_path = Path::new("pipeline").join(task_group.id.clone());
+        let dir_path = PathBuf::from(self.options.pipeline_dir.clone()).join(task_group.id.clone());
 
         command.current_dir(dir_path.clone());
 
