@@ -16,7 +16,7 @@ eval_inputs <- function(stage_results, input_quosures) {
         eval_env <- new_environment(data = c(stage_results$results, dsl_funcs), parent = inputs_env)
 
         input <- eval(inputs_expr, envir = eval_env)
-
+        
         if (is_iter(input)) {
             return(input)
         }
@@ -25,7 +25,7 @@ eval_inputs <- function(stage_results, input_quosures) {
     })
 }
 
-stage_task_iter <- function(stage, input_iters) {
+stage_tasks_iter <- function(stage, input_iters) {
     if (is_empty(stage$input_quosures)) {
         make_iter(list(body = stage$body, args = list()))
     } else {
@@ -36,12 +36,11 @@ stage_task_iter <- function(stage, input_iters) {
 run_pipeline <- function(pipeline, executor = r_executor, pipeline_dir = 'pipeline') {
     reduce(pipeline$exec_order, function(stage_results, stage) {
         input_iters <- eval_inputs(stage_results, stage$input_quosures)
-
-        task_iter <- stage_task_iter(stage, input_iters)
+        task_iter <- stage_tasks_iter(stage, input_iters)
 
         stage_executor <- if (!is.null(stage$override_executor)) stage$override_executor else executor
 
-        outputs_iter <- stage_executor(task_iter, pipeline_dir = pipeline_dir)
+        outputs_iter <- stage_executor(task_iter, stage_name = stage$name, pipeline_dir = pipeline_dir)
 
         stage_results$results[[stage$name]] <- outputs_iter$results
         stage_results$metadata[[stage$name]] <- outputs_iter$metadata_iter

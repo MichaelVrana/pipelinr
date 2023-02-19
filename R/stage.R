@@ -8,10 +8,23 @@ stage <- function(body, inputs = stage_inputs(), save_results = FALSE, override_
     list(body = body, input_quosures = inputs, save_results = save_results, override_executor = override_executor)
 }
 
-task_filename_from_output_filename <- function(output_filename) gsub("(task_[0-9]+)_out\\.qs", "\\1.qs", output_filename)
+clear_stage_dir <- function(pipeline_dir, stage_name) {
+    stage_dir <- file.path(pipeline_dir, stage_name)
 
-stage_outputs_iter <- function(stage_id, pipeline_dir) {
-    stage_dir <- file.path(pipeline_dir, stage_id)
+    list.files(stage_dir) %>%
+        map(., function(filename) file.path(stage_dir, filename)) %>%
+        unlist() %>%
+        file.remove()
+}
+
+task_file_path_from_output_file_path <- function(output_file_path) {
+    basename(output_file_path) %>%
+        gsub("(task_[0-9]+)_out\\.qs$", "\\1.qs", .) %>%
+        file.path(dirname(output_file_path), .)
+}
+
+stage_outputs_iter <- function(stage_name, pipeline_dir) {
+    stage_dir <- file.path(pipeline_dir, stage_name)
 
     list.files(stage_dir, pattern = ".*_out\\.qs$") %>%
         vec_to_iter() %>%
@@ -20,11 +33,11 @@ stage_outputs_iter <- function(stage_id, pipeline_dir) {
                 return(NULL)
             }
 
-            outputs_filename <- file.path(stage_dir, filename)
-            task_filename <- task_filename_from_output_filename(outputs_filename) %>% file.path(stage_dir, .)
+            outputs_file_path <- file.path(stage_dir, filename)
+            task_file_path <- task_file_path_from_output_file_path(outputs_file_path)
 
-            outputs <- qread(outputs_filename)
-            task <- qread(task_filename)
+            outputs <- qread(outputs_file_path)
+            task <- qread(task_file_path)
 
             list(task = task, outputs = outputs)
         })

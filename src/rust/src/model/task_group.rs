@@ -5,7 +5,7 @@ use crate::helpers::get_named::GetNamed;
 use super::task::Task;
 
 pub struct TaskGroup {
-    pub id: String,
+    pub stage_name: String,
     pub tasks: Vec<Task>,
 }
 
@@ -15,22 +15,22 @@ impl From<Robj> for TaskGroup {
             .as_list()
             .unwrap_or_else(|| panic!("Task group object must be a list"));
 
-        let id = list
-            .get_named("id")
-            .unwrap_or_else(|| panic!("Task group object must have an ID"))
+        let stage_name = list
+            .get_named("stage_name")
+            .unwrap_or_else(|| panic!("Task group object must have a stage name"))
             .as_str()
             .unwrap_or_else(|| panic!("Task group ID must be a string"))
             .to_string();
 
         let tasks: Vec<Task> = list
             .get_named("tasks")
-            .unwrap_or_else(|| panic!("Task group object must containt tasks"))
+            .unwrap_or_else(|| panic!("Task group object must contain tasks"))
             .as_list()
             .unwrap_or_else(|| panic!("Task group tasks object must be a list"))
             .iter()
             .map(|(_, obj)| obj.into())
             .collect();
 
-        Self { id, tasks }
+        Self { stage_name, tasks }
     }
 }

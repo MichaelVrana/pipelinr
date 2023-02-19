@@ -11,7 +11,7 @@ stderr_filename <- args[[4]]
 
 task_result_filename <- paste(file_path_sans_ext(task_filename), "_out.qs", sep = "")
 
-task_result <- qread(task_result_filename)
+task_result <- if (file.exists(task_result_filename)) qread(task_result_filename) else list(result = NULL)
 
 stdout <- read_file(stdout_filename)
 stderr <- read_file(stderr_filename)

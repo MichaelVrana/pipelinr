@@ -5,16 +5,22 @@ test_that("Metadata function retrieves stage metadata", {
         list(number = 3, str = "c")
     )
 
+    gnu_parallel_executor <- make_gnu_parallel_executor(ssh_login_file = "../test_worker/nodefile")
+
     pipeline <- make_pipeline(
-        stage1 = stage(inputs = stage_inputs(x = data %>% vec_to_iter()), body = function(x) {
-            print("stage1 called")
-            print(x)
+        stage1 = stage(inputs = stage_inputs(x = data %>% vec_to_iter()), override_executor = gnu_parallel_executor, body = function(x) {
+            print("This will be in stdout")
             list(number = x$number * 2, str = x$str)
         }),
-        metadata_stage = stage(inputs = stage_inputs(metadata = metadata(stage1)), body = function(metadata) metadata)
+        metadata_stage = stage(inputs = stage_inputs(x = metadata(stage1)), body = function(x) x)
     )
 
-    results <- run_pipeline(pipeline, pipeline_dir = "tests/testthat/resources/pipeline")
+    results <- run_pipeline(pipeline,
+        pipeline_dir = "../resources/pipeline"
+    )
 
-    print(results)
+    stdout <- map_iter(results$results$metadata_stage, function(meta) meta$outputs$stdout) %>%
+        collect_iter()
+
+    expect_equal(stdout, map(1:3, function(x) "[1] \"This will be in stdout\"\n"))
 })

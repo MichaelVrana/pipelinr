@@ -1,11 +1,7 @@
 use super::options::GNUParallelOptions;
 use crate::{helpers::panic_on_err::PanicOnErr, model::task_group::TaskGroup};
 use extendr_api::prelude::*;
-use std::{
-    fs::create_dir_all,
-    path::{PathBuf},
-    process::Command,
-};
+use std::{fs::create_dir_all, path::PathBuf, process::Command};
 
 pub struct GNUParallel {
     options: GNUParallelOptions,
@@ -17,12 +13,17 @@ impl GNUParallel {
     }
 
     fn create_task_group_dir(&self, command: &mut Command, task_group: &TaskGroup) -> PathBuf {
-        let dir_path = PathBuf::from(self.options.pipeline_dir.clone()).join(task_group.id.clone());
+        let dir_path =
+            PathBuf::from(self.options.pipeline_dir.clone()).join(task_group.stage_name.clone());
 
         command.current_dir(dir_path.clone());
 
         if let Err(error) = create_dir_all(dir_path.clone()) {
-            rprintln!("Warning: Failed to create GNU Parallel IO directory for task group id {}. Reason: {}", task_group.id, error.to_string());
+            rprintln!(
+                "Warning: Failed to create pipeline stage directory for stage name {}. Reason: {}",
+                task_group.stage_name,
+                error.to_string()
+            );
         }
 
         dir_path
@@ -31,8 +32,9 @@ impl GNUParallel {
     fn add_ssh_args(&self, command: &mut Command) {
         command.args([
             "--sshloginfile",
-            format!("../../{}", self.options.ssh_login_file).as_str(),
-            "--trc",
+            self.options.ssh_login_file.as_str(),
+            "--transfer",
+            "--return",
             "{.}_out.qs",
             "./exec_task_and_collect_metadata.sh",
             ":::",
@@ -61,6 +63,10 @@ impl GNUParallel {
         let mut command = Command::new("parallel");
 
         let dir_path = self.create_task_group_dir(&mut command, task_group);
+
+        if task_group.tasks.is_empty() {
+            return;
+        }
 
         if !self.options.ssh_login_file.is_empty() {
             self.add_ssh_args(&mut command);

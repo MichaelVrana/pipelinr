@@ -1,7 +1,7 @@
 library(rlang)
 library(purrr)
 
-r_executor <- function(task_iter, pipeline_dir) {
+r_executor <- function(task_iter, stage_name, pipeline_dir) {
     list(
         results_iter =
             task_iter %>%
