@@ -1,9 +1,9 @@
 test_that("Pipeline evaluates crossed inputs", {
     pipeline <- make_pipeline(
-        numbers = stage(body = function(x) {
+        numbers = stage(function() {
             1:3
         }),
-        strings = stage(body = function(x) {
+        strings = stage(function() {
             list("a", "b")
         }),
         doubled_numbers = stage(

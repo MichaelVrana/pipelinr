@@ -1,6 +1,24 @@
 library(rlang)
 library(purrr)
 
+find_unbound_body_args <- function(stage) {
+    args <- formals(stage$body) %>% names()
+    input_names <- stage$input_quosures %>% names()
+
+    if (is.null(args) || is.null(input_names)) {
+        return(character())
+    }
+
+    unbound <- setdiff(args, input_names)
+
+    if (is_empty(unbound)) {
+        return(character())
+    }
+
+    names(unbound) <- unbound
+    unbound
+}
+
 find_deps <- function(input_quo, other_stage_names) {
     inputs_expr <- quo_get_expr(input_quo)
     inputs_env <- quo_get_env(input_quo)
@@ -20,9 +38,24 @@ with_deps <- function(stages) {
     stage_names <- names(stages)
 
     map(stages, function(stage) {
-        other_stage_names <- discard(stage_names, function(name) name == stage$name)
+        other_stage_names <- setdiff(stage_names, stage$name)
 
-        deps <- map(stage$input_quosures, function(input_quo) find_deps(input_quo, other_stage_names))
+        deps <- map(stage$input_quosures, function(input_quo) find_deps(input_quo, other_stage_names)) %>%
+            c(., find_unbound_body_args(stage))
+
+        unbound_args <- find_unbound_body_args(stage)
+
+        unknown_deps <- setdiff(flatten(deps) %>% unname(), other_stage_names)
+
+        if (length(unknown_deps) > 0) {
+            c("Unbound stage dependencies detected: ", unknown_deps) %>%
+                do.call(paste, .) %>%
+                stop()
+        }
+
+        unbound_arg_quos <- map(unbound_args, function(arg) as.symbol(arg) %>% new_quosure(., env = empty_env())) %>% new_quosures()
+
+        stage$input_quosures <- c(stage$input_quosures, unbound_arg_quos)
         c(stage, deps = unique(deps))
     })
 }
