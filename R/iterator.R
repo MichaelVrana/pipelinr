@@ -71,13 +71,13 @@ cross_iter <- function(iter1, iter2) cross2(collect_iter(iter1), collect_iter(it
 
 #             imap(iters, function(iter, idx) {
 #                 if (!iterate) return(iter)
-                
+
 #                 new_iter <- iter$next_iter()
 
 #                 if (iter$done) return(original_iters[[idx]])
-                
+
 #                 iterate <- FALSE
-#                 iter <- 
+#                 iter <-
 #             }) %>% cross()
 #         }
 
@@ -125,4 +125,18 @@ memoize_iter <- function(iter) {
     }
 
     make_memoize_iter(iter)
+}
+
+head_iter <- function(iter, n) {
+    if (n < 0) stop("Cannot take negative number of elements from head", n)
+
+    if (iter$done || n == 0) {
+        return(make_empty_iter())
+    }
+
+    list(
+        value = iter$value,
+        done = FALSE,
+        next_iter = function() head_iter(iter$next_iter(), n - 1)
+    )
 }
