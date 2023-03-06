@@ -41,11 +41,12 @@ with_deps <- function(stages) {
         other_stage_names <- setdiff(stage_names, stage$name)
 
         deps <- map(stage$input_quosures, function(input_quo) find_deps(input_quo, other_stage_names)) %>%
-            c(., find_unbound_body_args(stage))
+            flatten() %>%
+            unlist()
 
         unbound_args <- find_unbound_body_args(stage)
 
-        unknown_deps <- setdiff(flatten(deps) %>% unname(), other_stage_names)
+        unknown_deps <- setdiff(deps %>% unname(), other_stage_names)
 
         if (length(unknown_deps) > 0) {
             c("Unbound stage dependencies detected: ", unknown_deps) %>%
@@ -56,7 +57,8 @@ with_deps <- function(stages) {
         unbound_arg_quos <- map(unbound_args, function(arg) as.symbol(arg) %>% new_quosure(., env = empty_env())) %>% new_quosures()
 
         stage$input_quosures <- c(stage$input_quosures, unbound_arg_quos)
-        c(stage, deps = unique(deps))
+        stage$deps <- c(deps, unbound_args) %>% unique()
+        stage
     })
 }
 
@@ -77,9 +79,7 @@ topsort <- function(stages) {
     stage_names_without_deps <- map(stages_without_deps, function(stage) stage$name)
 
     stages_with_new_deps <- map(stages_with_deps, function(stage) {
-        new_deps <- discard(stage$deps, function(dep) {
-            has_element(stage_names_without_deps, dep)
-        })
+        new_deps <- setdiff(stage$deps, stage_names_without_deps)
 
         new_stage <- c(stage)
         new_stage$deps <- new_deps
