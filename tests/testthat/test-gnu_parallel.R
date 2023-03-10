@@ -24,3 +24,20 @@ test_that("Metadata function retrieves stage metadata", {
 
     expect_equal(stdout, map(1:3, function(x) "[1] \"This will be in stdout\"\n"))
 })
+
+test_that("It correctly serializes function with it's globals", {
+    gnu_parallel_executor <- make_gnu_parallel_executor(ssh_login_file = "../test_worker/nodefile")
+
+    foo <- 1
+    bar <- function() foo + 1
+
+    pipeline <- make_pipeline(
+        stage1 = stage(body = function() {
+            bar()
+        })
+    )
+
+    outputs <- run_pipeline(pipeline)
+
+    expect_equal(outputs$results$stage1$value, 2)\
+})
