@@ -62,7 +62,7 @@ run_pipeline <- function(pipeline, executor = r_executor, pipeline_dir = "pipeli
 
         stage_executor <- if (!is.null(stage$override_executor)) stage$override_executor else executor
 
-        outputs_iter <- stage_executor(task_iter, stage_name = stage$name, pipeline_dir = pipeline_dir)
+        outputs_iter <- stage_executor(task_iter, stage = stage, pipeline_dir = pipeline_dir)
 
         stage_results$results[[stage$name]] <- outputs_iter$results
         stage_results$metadata[[stage$name]] <- outputs_iter$metadata_iter

@@ -11,6 +11,10 @@ stage <- function(body, inputs = stage_inputs(), save_results = FALSE, override_
 clear_stage_dir <- function(pipeline_dir, stage_name) {
     stage_dir <- file.path(pipeline_dir, stage_name)
 
+    if (!file.exists(stage_dir)) {
+        return()
+    }
+
     list.files(stage_dir) %>%
         map(., function(filename) file.path(stage_dir, filename)) %>%
         unlist() %>%

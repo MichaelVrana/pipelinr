@@ -44,15 +44,3 @@ find_used_globals_and_packages <- function(fun) {
         }
     )
 }
-
-serialize_function <- function(fun, filename) {
-    globals <- find_used_globals_and_packages(fun)
-
-    qsave(list(fun = fun, globals = as.environment(globals)), filename)
-}
-
-# foo <- function(from, to) map(from:to, function(x) x * x)
-
-# bar <- function() foo(1, 3)
-
-# find_used_globals_and_packages(bar)

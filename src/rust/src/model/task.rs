@@ -3,7 +3,7 @@ use extendr_api::{Conversions, Function, List, Robj};
 
 pub struct Task {
     pub args: List,
-    pub body: Function,
+    pub body: List,
 }
 
 impl From<Robj> for Task {
@@ -21,8 +21,8 @@ impl From<Robj> for Task {
             body: list
                 .get_named("body")
                 .unwrap_or_else(|| panic!("Task object is missing body"))
-                .as_function()
-                .unwrap_or_else(|| panic!("Task object body must be a function")),
+                .as_list()
+                .unwrap_or_else(|| panic!("Task object body must be a list")),
         }
     }
 }
