@@ -22,8 +22,7 @@ make_gnu_parallel_executor <- function(ssh_login_file = "") {
 
         outputs_iter <- stage_outputs_iter(stage$name, pipeline_dir)
         results_iter <- stage_outputs_iter_to_results_iter(outputs_iter)
-        metadata_iter <- stage_outputs_iter_to_metadata_iter(outputs_iter)
 
-        list(results_iter = results_iter, metadata_iter = metadata_iter)
+        list(results_iter = results_iter, metadata_iter = outputs_iter)
     }
 }

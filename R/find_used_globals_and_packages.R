@@ -22,7 +22,7 @@ find_used_globals_and_packages <- function(fun) {
         value <- get(global_name, fun_env)
         package_name <- get_package_name(global_name)
 
-        if (!is_null(package_name)) {
+        if (!is.null(package_name)) {
             return(list(globals = list(), packages = package_name))
         }
 

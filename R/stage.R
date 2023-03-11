@@ -47,6 +47,4 @@ stage_outputs_iter <- function(stage_name, pipeline_dir) {
         })
 }
 
-stage_outputs_iter_to_results_iter <- function(ouputs_iter) map_iter(ouputs_iter, function(output) output$result)
-
-stage_outputs_iter_to_metadata_iter <- function(metadata_iter) map_iter(metadata_iter, function(output) without_name(output, "result"))
+stage_outputs_iter_to_results_iter <- function(ouputs_iter) map_iter(ouputs_iter, function(output) output$outputs$result)
