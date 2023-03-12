@@ -1,5 +1,6 @@
 library(rlang)
 library(purrr)
+library(readr)
 
 create_metadata_function <- function(metadata_iters) {
     function(stage_symbol) {
@@ -53,8 +54,48 @@ print_stage_inputs <- function(stage_name, task_iter) {
     print_task_iter(task_iter)
 }
 
+find_stage_names_to_run <- function(stages, pipeline_dir) {
+    updated_or_new_stages <- keep(stages, function(stage) {
+        stage_hash_path <- file.path(pipeline_dir, stage$name, "stage_hash")
+
+        if (!file.exists(stage_hash_path)) {
+            return(TRUE)
+        }
+
+        prev_hash <- read_file(stage_hash_path)
+        curr_hash <- stage_hash(stage)
+
+        curr_hash != prev_hash
+    })
+
+    map(updated_or_new_stages, function(stage) {
+        find_child_stages(stages, stage$name)
+    }) %>%
+        flatten_chr() %>%
+        unique()
+}
+
 run_pipeline <- function(pipeline, executor = r_executor, pipeline_dir = "pipeline", print_inputs = FALSE) {
-    reduce(pipeline$exec_order, function(stage_results, stage) {
+    stages_to_run <- find_stage_names_to_run(pipeline$stages, pipeline_dir)
+
+    exec_order <- keep(pipeline$exec_order, function(stage) has_name(stages_to_run, stage$name))
+
+    init_results <- discard(pipeline$exec_order, function(stage) has_name(stages_to_run, stage$name)) %>%
+        reduce(.,
+            .init = list(
+                results = list(),
+                metadata = list()
+            ), function(results, stage) {
+                outputs_iter <- stage_outputs_iter(stage$name, pipeline_dir)
+                results_iter <- stage_outputs_iter_to_results_iter(outputs_iter)
+
+                results$results[[stage$name]] <- outputs_iter
+                results$metadata[[stage$name]] <- results_iter
+                results
+            }
+        )
+
+    reduce(exec_order, function(stage_results, stage) {
         input_iters <- eval_inputs(stage_results, stage$input_quosures)
         task_iter <- stage_tasks_iter(stage, input_iters)
 
@@ -62,10 +103,10 @@ run_pipeline <- function(pipeline, executor = r_executor, pipeline_dir = "pipeli
 
         stage_executor <- if (!is.null(stage$override_executor)) stage$override_executor else executor
 
-        outputs_iter <- stage_executor(task_iter, stage = stage, pipeline_dir = pipeline_dir)
+        output_iters <- stage_executor(task_iter, stage = stage, pipeline_dir = pipeline_dir)
 
-        stage_results$results[[stage$name]] <- outputs_iter$results
-        stage_results$metadata[[stage$name]] <- outputs_iter$metadata_iter
+        stage_results$results[[stage$name]] <- output_iters$results
+        stage_results$metadata[[stage$name]] <- output_iters$metadata_iter
         stage_results
-    }, .init = list(results = list(), metadata = list()))
+    }, .init = init_results)
 }
