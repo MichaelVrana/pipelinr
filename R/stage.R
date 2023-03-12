@@ -4,6 +4,8 @@ suppressPackageStartupMessages(library(qs))
 
 stage_inputs <- function(...) enquos(...)
 
+task_file_pattern <- ".*_out\\.qs$"
+
 stage <- function(body, inputs = stage_inputs(), save_results = FALSE, override_executor = NULL) {
     list(body = body, input_quosures = inputs, save_results = save_results, override_executor = override_executor)
 }
@@ -15,7 +17,7 @@ clear_stage_dir <- function(pipeline_dir, stage_name) {
         return()
     }
 
-    list.files(stage_dir) %>%
+    list.files(stage_dir, pattern = task_file_pattern) %>%
         map(., function(filename) file.path(stage_dir, filename)) %>%
         unlist() %>%
         file.remove()
@@ -30,7 +32,7 @@ task_file_path_from_output_file_path <- function(output_file_path) {
 stage_outputs_iter <- function(stage_name, pipeline_dir) {
     stage_dir <- file.path(pipeline_dir, stage_name)
 
-    list.files(stage_dir, pattern = ".*_out\\.qs$") %>%
+    list.files(stage_dir, pattern = task_file_pattern) %>%
         vec_to_iter() %>%
         map_iter(., function(filename) {
             if (is.null(filename)) {
@@ -48,3 +50,31 @@ stage_outputs_iter <- function(stage_name, pipeline_dir) {
 }
 
 stage_outputs_iter_to_results_iter <- function(ouputs_iter) map_iter(ouputs_iter, function(output) output$outputs$result)
+
+stage_hash <- function(stage) {
+    used_globals_and_packages <- find_used_globals_and_packages(stage$body)
+    list(
+        used_globals_and_packages = used_globals_and_packages,
+        body = stage$body,
+        input_quosures = stage$input_quosures
+    ) %>% hash()
+}
+
+find_child_stages <- function(stages, stage_name) {
+    find_rec <- function(stage) {
+        direct_childs <- keep(stages, function(child_stage) has_element(child_stage$deps, stage$name))
+
+        map(direct_childs, find_rec) %>% reduce(., .init = stage$name, c)
+    }
+
+    find_rec(stages[[stage_name]]) %>% setdiff(., stage_name)
+}
+
+find_parent_stages <- function(stages, stage_name) {
+    find_rec <- function(stage) {
+        map(stage$deps, function(dep_name) find_rec(stages[[dep_name]])) %>%
+            reduce(., .init = stage$name, c)
+    }
+
+    find_rec(stages[[stage_name]]) %>% setdiff(., stage_name)
+}
