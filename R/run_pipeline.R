@@ -69,7 +69,7 @@ find_stage_names_to_run <- function(stages, pipeline_dir) {
     })
 
     map(updated_or_new_stages, function(stage) {
-        find_child_stages(stages, stage$name)
+        c(find_child_stages(stages, stage$name), stage$name)
     }) %>%
         flatten_chr() %>%
         unique()
@@ -78,9 +78,9 @@ find_stage_names_to_run <- function(stages, pipeline_dir) {
 run_pipeline <- function(pipeline, executor = r_executor, pipeline_dir = "pipeline", print_inputs = FALSE) {
     stages_to_run <- find_stage_names_to_run(pipeline$stages, pipeline_dir)
 
-    exec_order <- keep(pipeline$exec_order, function(stage) has_name(stages_to_run, stage$name))
+    exec_order <- keep(pipeline$exec_order, function(stage) has_element(stages_to_run, stage$name))
 
-    init_results <- discard(pipeline$exec_order, function(stage) has_name(stages_to_run, stage$name)) %>%
+    init_results <- discard(pipeline$exec_order, function(stage) has_element(stages_to_run, stage$name)) %>%
         reduce(.,
             .init = list(
                 results = list(),
