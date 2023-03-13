@@ -17,3 +17,5 @@ echo "Host *
 $(sed -r 's/(.*) (.*)/Host \1\n    Hostname \2\n/g' <<< $hostnames)" > ssh.config
 
 sed -r 's/(.*) .*/1\/ \1/g' <<< $hostnames > nodefile
+
+chmod 400 id_rsa_test

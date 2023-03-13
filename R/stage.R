@@ -17,10 +17,11 @@ clear_stage_dir <- function(pipeline_dir, stage_name) {
         return()
     }
 
-    list.files(stage_dir, pattern = task_file_pattern) %>%
+    files_to_remove <- list.files(stage_dir, pattern = task_file_pattern) %>%
         map(., function(filename) file.path(stage_dir, filename)) %>%
-        unlist() %>%
-        file.remove()
+        unlist()
+
+    if (!is_empty(files_to_remove)) file.remove(files_to_remove)
 }
 
 task_file_path_from_output_file_path <- function(output_file_path) {
