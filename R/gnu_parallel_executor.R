@@ -15,7 +15,7 @@ make_gnu_parallel_executor <- function(ssh_login_file = "") {
             list(body = task_body, args = task$args)
         })
 
-        task_group <- list(tasks = collect_iter(tasks), stage_name = stage$name)
+        task_group <- list(tasks = collect(tasks), stage_name = stage$name)
 
         clear_stage_dir(pipeline_dir, stage$name)
         gnu_parallel_run_task_group(task_group, normalizePath(ssh_login_file), normalizePath(pipeline_dir))

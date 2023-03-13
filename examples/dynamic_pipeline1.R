@@ -19,7 +19,7 @@ pipeline <- make_pipeline(
     stage3 = stage(
         inputs = stage_inputs(
             single_elem = stage2,
-            collected = stage2 %>% collect_iter()
+            collected = stage2 %>% collect()
         ),
         body = function(single_elem, collected) {
             print("stage3 called")

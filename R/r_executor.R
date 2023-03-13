@@ -6,7 +6,7 @@ r_executor <- function(task_iter, stage, pipeline_dir) {
         results_iter =
             task_iter %>%
                 map_iter(., function(task) do.call(stage$body, task$args)) %>%
-                collect_iter() %>%
+                collect() %>%
                 vec_to_iter(),
         metadata_iter = make_empty_iter()
     )

@@ -35,7 +35,17 @@ fold_iter <- function(iter, init, fun) {
     fold(iter, init)
 }
 
-collect_iter <- function(iter) fold_iter(iter, list(), function(acc, curr) c(acc, list(curr)))
+collect <- function(iter) fold_iter(iter, list(), function(acc, curr) c(acc, list(curr)))
+
+collect_df <- function(iter) {
+    collected <- collect(iter)
+
+    if (all(collected, is.data.frame)) {
+        return(do.call(rbind, collected))
+    }
+
+    transpose(collected) %>% do.call(data.frame, .)
+}
 
 map_iter <- function(iter, fun) {
     if (iter$done) {
@@ -58,7 +68,7 @@ filter_iter <- function(iter, predicate) {
 
 is_iter <- function(iter_like) is_list(iter_like) && is_function(iter_like$next_iter) && is_logical(iter_like$done)
 
-cross_iter <- function(iter1, iter2) cross2(collect_iter(iter1), collect_iter(iter2)) %>% vec_to_iter()
+cross_iter <- function(iter1, iter2) cross2(collect(iter1), collect(iter2)) %>% vec_to_iter()
 
 # cross_iter <- function(...) {
 #     original_iters <- list(...)

@@ -15,7 +15,7 @@ test_that("Pipeline evaluates mapped input", {
 
     stage_results <- run_pipeline(pipeline)
 
-    actual <- collect_iter(stage_results$results$stage2)
+    actual <- collect(stage_results$results$stage2)
 
     expect_equal(actual, list(
         list(number = 2, str = "a"),

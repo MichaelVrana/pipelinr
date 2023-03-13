@@ -13,7 +13,7 @@ test_that("It caches values", {
 
     expect_equal(iter$next_iter()$value, 2)
 
-    expect_equal(collect_iter(iter), as.list(1:3))
+    expect_equal(collect(iter), as.list(1:3))
 
     expect_equal(call_count, 3)
 })
