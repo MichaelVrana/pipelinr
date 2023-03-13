@@ -24,4 +24,23 @@ find_symbols <- function(expr) {
 
 without_name <- function(list, name) list[grep(name, names(list), invert = TRUE)]
 
-mapped <- function(input) vec_to_iter(input$value)
+merge_lists <- function(...) {
+    lists <- list(...)
+
+    keys <- reduce(lists, function(acc, l) c(names(acc), names(l))) %>% unique()
+
+    reduce(lists, function(acc, l) {
+        if (is.null(acc)) {
+            return(l)
+        }
+
+        map2(acc[keys], l[keys], c) %>%
+            set_names(keys)
+    })
+}
+
+mapped <- function(input) {
+    fold_iter(input, init = make_empty_iter(), function(prev, curr) {
+        vec_to_iter(curr) %>% concat_iter(prev, .)
+    })
+}

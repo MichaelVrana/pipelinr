@@ -150,3 +150,31 @@ head_iter <- function(iter, n) {
         next_iter = function() head_iter(iter$next_iter(), n - 1)
     )
 }
+
+concat_iter <- function(...) {
+    iters <- list(...)
+
+    if (length(iters) == 0) {
+        return(make_empty_iter())
+    }
+
+    if (length(iters) == 1) {
+        return(iters[[1]])
+    }
+
+    curr_iter <- iters[[1]]
+    iters_tail <- tail(iters, n = 1)
+
+    if (iters[[1]]$done) {
+        return(do.call(concat_iter, iters_tail))
+    }
+
+    list(value = curr_iter$value, done = FALSE, next_iter = function() {
+        next_iters <- c(
+            list(curr_iter$next_iter()),
+            iters_tail
+        )
+
+        do.call(concat_iter, next_iters)
+    })
+}
