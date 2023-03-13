@@ -40,11 +40,11 @@ collect <- function(iter) fold_iter(iter, list(), function(acc, curr) c(acc, lis
 collect_df <- function(iter) {
     collected <- collect(iter)
 
-    if (all(collected, is.data.frame)) {
+    if (every(collected, is.data.frame)) {
         return(do.call(rbind, collected))
     }
 
-    transpose(collected) %>% do.call(data.frame, .)
+    lapply(collected, as.data.frame) %>% do.call(rbind, .)
 }
 
 map_iter <- function(iter, fun) {
