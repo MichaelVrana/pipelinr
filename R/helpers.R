@@ -40,7 +40,10 @@ merge_lists <- function(...) {
 }
 
 mapped <- function(input) {
-    fold_iter(input, init = make_empty_iter(), function(prev, curr) {
-        vec_to_iter(curr) %>% concat_iter(prev, .)
+    iter <- if (is_iter(input)) input else make_iter(input)
+
+    fold_iter(iter, init = make_empty_iter(), function(prev_iter, curr) {
+        curr_iter <- if (is.data.frame(curr)) df_to_iter(curr) else vec_to_iter(curr)
+        concat_iter(prev_iter, curr_iter)
     })
 }

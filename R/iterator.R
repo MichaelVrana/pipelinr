@@ -1,17 +1,13 @@
 library(utils)
 library(purrr)
-
-vec_tail <- function(vec) {
-    if (is_empty(vec)) list()
-    tail(vec, length(vec) - 1)
-}
+library(dplyr)
 
 make_empty_iter <- function() {
     list(value = NULL, done = TRUE, next_iter = make_empty_iter)
 }
 
-make_iter <- function(value, next_iter = make_empty_iter()) {
-    list(value = value, done = FALSE, next_iter = function() next_iter)
+make_iter <- function(value, next_iter = make_empty_iter) {
+    list(value = value, done = FALSE, next_iter = next_iter)
 }
 
 vec_to_iter <- function(vec) {
@@ -19,7 +15,21 @@ vec_to_iter <- function(vec) {
         return(make_empty_iter())
     }
 
-    list(value = vec[[1]], done = FALSE, next_iter = function() vec_tail(vec) %>% vec_to_iter())
+    make_iter(
+        value = vec[[1]],
+        next_iter = function() tail(vec, -1) %>% vec_to_iter()
+    )
+}
+
+df_to_iter <- function(df) {
+    if (nrow(df) == 0) {
+        return(make_empty_iter())
+    }
+
+    make_iter(
+        value = head(df, n = 1),
+        next_iter = function() tail(df, n = -1) %>% df_to_iter()
+    )
 }
 
 fold_iter <- function(iter, init, fun) {
@@ -41,17 +51,21 @@ collect_df <- function(iter) {
     collected <- collect(iter)
 
     if (every(collected, is.data.frame)) {
-        return(do.call(rbind, collected))
+        return(bind_rows(collected))
     }
 
-    lapply(collected, as.data.frame) %>% do.call(rbind, .)
+    lapply(collected, as.data.frame) %>% bind_rows()
 }
 
 map_iter <- function(iter, fun) {
     if (iter$done) {
         return(make_empty_iter())
     }
-    list(value = fun(iter$value), done = FALSE, next_iter = function() map_iter(iter$next_iter(), fun))
+
+    make_iter(
+        value = fun(iter$value),
+        next_iter = function() map_iter(iter$next_iter(), fun)
+    )
 }
 
 filter_iter <- function(iter, predicate) {
@@ -63,7 +77,10 @@ filter_iter <- function(iter, predicate) {
         return(filter_iter(iter$next_iter(), predicate))
     }
 
-    list(value = iter$value, done = FALSE, next_iter = function() filter_iter(iter$next_iter(), predicate))
+    make_iter(
+        value = iter$value,
+        next_iter = function() filter_iter(iter$next_iter(), predicate)
+    )
 }
 
 is_iter <- function(iter_like) is_list(iter_like) && is_function(iter_like$next_iter) && is_logical(iter_like$done)
@@ -110,7 +127,7 @@ zip_iter <- function(...) {
         do.call(zip_iter, map(iters, function(iter) iter$next_iter()))
     }
 
-    list(value = values, done = done, next_iter = next_iter)
+    make_iter(value = values, next_iter = next_iter)
 }
 
 memoize_iter <- function(iter) {
@@ -131,7 +148,7 @@ memoize_iter <- function(iter) {
             new_iter
         }
 
-        list(value = iter$value, done = FALSE, next_iter = next_iter)
+        make_iter(value = iter$value, next_iter = next_iter)
     }
 
     make_memoize_iter(iter)
@@ -144,9 +161,8 @@ head_iter <- function(iter, n) {
         return(make_empty_iter())
     }
 
-    list(
+    make_iter(
         value = iter$value,
-        done = FALSE,
         next_iter = function() head_iter(iter$next_iter(), n - 1)
     )
 }
@@ -169,12 +185,15 @@ concat_iter <- function(...) {
         return(do.call(concat_iter, iters_tail))
     }
 
-    list(value = curr_iter$value, done = FALSE, next_iter = function() {
-        next_iters <- c(
-            list(curr_iter$next_iter()),
-            iters_tail
-        )
+    make_iter(
+        value = curr_iter$value,
+        next_iter = function() {
+            next_iters <- c(
+                list(curr_iter$next_iter()),
+                iters_tail
+            )
 
-        do.call(concat_iter, next_iters)
-    })
+            do.call(concat_iter, next_iters)
+        }
+    )
 }

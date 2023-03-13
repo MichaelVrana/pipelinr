@@ -19,36 +19,39 @@ source_coverage <- function(package, package_source) {
     )
 }
 
-executor <- make_gnu_parallel_executor("tests/test_worker/nodefile")
+# Sys.setenv(PARALLEL_SSH = "ssh -F tests/test_worker/ssh.config")
+# executor <- make_gnu_parallel_executor("tests/test_worker/nodefile")
 
 pipeline <- make_pipeline(
-    # () =>  Vec<character>
     packages = stage(function() c("p1", "p2")),
-    # (char) => Vec<char>
-    package_source = stage(inputs = stage_inputs(package = mapped(packages)), function(package) {
-        data.frame(package = package, src = source_files(package))
-    }),
-    # (char, Vec<char>) => double
+    #
+    package_source = stage(
+        inputs = stage_inputs(
+            package = mapped(packages)
+        ), body = function(package) {
+            data.frame(package = package, src = source_files(package))
+        }
+    ),
+    #
     package_source_coverage = stage(
         inputs = stage_inputs(
-            package_with_source = collect_iter(package_source) %>% do.call(rbind, .) %>% transpose() %>% vec_to_iter()
+            package_with_source = collect_df(package_source) %>% mapped()
         ),
         body = function(package_with_source) {
             cov <- source_coverage(package_with_source$package, package_with_source$src)
-
             data.frame(pkg = package_with_source$package, src = package_with_source$src, coverage = cov)
         },
         # override_executor = executor
     ),
-    # (List<double>) => ...
+    #
     metadata = stage(
         inputs = stage_inputs(
-            package_source_coverage_whole = collect_iter(package_source_coverage) %>% do.call(rbind, .)
+            package_source_coverage_whole = collect_df(package_source_coverage)
         ),
         body = function(package_source_coverage_whole) {
-
+            str(package_source_coverage_whole)
         }
     )
 )
 
-run_pipeline(pipeline, print_inputs = TRUE)
+outputs <- run_pipeline(pipeline, print_inputs = TRUE)
