@@ -1,17 +1,32 @@
 library(codetools)
 library(purrr)
-library(qs)
 
-get_package_name <- function(global_name) {
-    namespace_split <- find(global_name) %>%
-        strsplit(., ":") %>%
-        pluck(1)
+is_ns_access_operator <- function(fun_name) fun_name == "::" || fun_name == ":::"
 
-    if (length(namespace_split) != 2 || namespace_split[[2]] == "base") {
-        return(NULL)
+find_used_namespaces <- function(ast) {
+    if (is.call(ast)) {
+        fun_name <- ast[[1]] %>% toString()
+
+        if (is_ns_access_operator(fun_name)) {
+            namespace <- ast[[2]] %>% toString()
+
+            if (namespace == "base") {
+                return(character())
+            }
+
+            return(namespace)
+        }
+
+        return(
+            tail(ast, n = 1) %>% map(., find_used_namespaces) %>% unlist()
+        )
     }
 
-    if (namespace_split[[1]] == "package") namespace_split[[2]] else NULL
+    if (is.pairlist(ast)) {
+        return(map(ast, find_used_namespaces) %>% unlist())
+    }
+
+    character()
 }
 
 find_used_globals_and_packages <- function(fun) {
@@ -21,24 +36,35 @@ find_used_globals_and_packages <- function(fun) {
         return(empty_result)
     }
 
-    globals <- codetools::findGlobals(fun)
     fun_env <- environment(fun)
+    env_name <- environmentName(fun_env)
+
+    if (env_name == "base") {
+        return(empty_result)
+    }
+
+    if (env_name != "R_GlobalEnv") {
+        return(list(globals = list(), packages = env_name))
+    }
+
+    globals <- codetools::findGlobals(fun)
+
+    used_packages <- if (some(globals, is_ns_access_operator)) {
+        body(fun) %>% find_used_namespaces()
+    } else {
+        character()
+    }
 
     map(globals, function(global_name) {
         value <- get(global_name, fun_env)
-        package_name <- get_package_name(global_name)
-
-        if (!is.null(package_name)) {
-            return(list(globals = list(), packages = package_name))
-        }
 
         result <- if (is.function(value)) {
             find_used_globals_and_packages(value)
         } else {
-            list(globals = list(), packages = character())
+            c(empty_result)
         }
 
         result$globals[[global_name]] <- value
         result
-    }) %>% reduce(., .init = empty_result, merge_lists)
+    }) %>% reduce(., .init = list(globals = list(), packages = used_packages), merge_lists)
 }
