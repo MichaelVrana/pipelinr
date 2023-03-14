@@ -28,14 +28,15 @@ pipeline <- make_pipeline(
     package_source = stage(
         inputs = stage_inputs(
             package = mapped(packages)
-        ), body = function(package) {
+        ),
+        body = function(package) {
             data.frame(package = package, src = source_files(package))
         }
     ),
     #
     package_source_coverage = stage(
         inputs = stage_inputs(
-            package_with_source = collect_df(package_source) %>% mapped()
+            package_with_source = collect_df(package_source) |> mapped()
         ),
         body = function(package_with_source) {
             cov <- source_coverage(package_with_source$package, package_with_source$src)
@@ -48,9 +49,7 @@ pipeline <- make_pipeline(
         inputs = stage_inputs(
             package_source_coverage_whole = collect_df(package_source_coverage)
         ),
-        body = function(package_source_coverage_whole) {
-            str(package_source_coverage_whole)
-        }
+        body = function(package_source_coverage_whole) {}
     )
 )
 
