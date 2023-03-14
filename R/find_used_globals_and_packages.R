@@ -15,6 +15,12 @@ get_package_name <- function(global_name) {
 }
 
 find_used_globals_and_packages <- function(fun) {
+    empty_result <- list(globals = list(), packages = character())
+
+    if (is.primitive(fun)) {
+        return(empty_result)
+    }
+
     globals <- codetools::findGlobals(fun)
     fun_env <- environment(fun)
 
@@ -34,13 +40,5 @@ find_used_globals_and_packages <- function(fun) {
 
         result$globals[[global_name]] <- value
         result
-    }) %>% reduce(.,
-        .init = list(globals = list(), packages = character()),
-        function(acc, curr) {
-            list(
-                globals = c(acc$globals, curr$globals),
-                packages = c(acc$packages, curr$packages)
-            )
-        }
-    )
+    }) %>% reduce(., .init = empty_result, merge_lists)
 }
