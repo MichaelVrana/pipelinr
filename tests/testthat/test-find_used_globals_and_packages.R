@@ -28,3 +28,14 @@ test_that("It detects packages that are accessed using a namespace", {
     expect_equal(actual$globals$foo, foo)
     expect_equal(actual$packages, "purrr")
 })
+
+test_that("It detects multiple packages that are accessed using a namespace", {
+    foo <- function(from, to) purrr::map(from:to, function(x = rlang:::enexpr()) x * x)
+
+    bar <- function() foo(1, 3)
+
+    actual <- find_used_globals_and_packages(bar)
+
+    expect_equal(actual$globals$foo, foo)
+    expect_equal(actual$packages, c("purrr", "rlang"))
+})

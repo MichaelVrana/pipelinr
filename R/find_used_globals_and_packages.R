@@ -21,7 +21,7 @@ find_used_namespaces <- function(ast) {
     }
 
     if (is.call(ast) || is.pairlist(ast)) {
-        return(map(ast, find_used_namespaces) %>% unlist())
+        return(map(ast, find_used_namespaces) %>% unname() %>% unlist())
     }
 
     character()
