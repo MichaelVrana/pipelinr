@@ -3,26 +3,24 @@ library(purrr)
 
 is_ns_access_operator <- function(fun_name) fun_name == "::" || fun_name == ":::"
 
+is_ns_access_call <- function(ast) {
+    is.call(ast) && ast[[1]] %>%
+        toString() %>%
+        is_ns_access_operator()
+}
+
 find_used_namespaces <- function(ast) {
-    if (is.call(ast)) {
-        fun_name <- ast[[1]] %>% toString()
+    if (is_ns_access_call(ast)) {
+        namespace <- ast[[2]] %>% toString()
 
-        if (is_ns_access_operator(fun_name)) {
-            namespace <- ast[[2]] %>% toString()
-
-            if (namespace == "base") {
-                return(character())
-            }
-
-            return(namespace)
+        if (namespace == "base") {
+            return(character())
         }
 
-        return(
-            tail(ast, n = 1) %>% map(., find_used_namespaces) %>% unlist()
-        )
+        return(namespace)
     }
 
-    if (is.pairlist(ast)) {
+    if (is.call(ast) || is.pairlist(ast)) {
         return(map(ast, find_used_namespaces) %>% unlist())
     }
 
@@ -43,7 +41,7 @@ find_used_globals_and_packages <- function(fun) {
         return(empty_result)
     }
 
-    if (env_name != "R_GlobalEnv") {
+    if (env_name != "" && env_name != globalenv() %>% environmentName()) {
         return(list(globals = list(), packages = env_name))
     }
 
