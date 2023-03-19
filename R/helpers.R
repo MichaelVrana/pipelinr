@@ -39,6 +39,12 @@ merge_lists <- function(...) {
     })
 }
 
+#' DSL function to create a task for each value in `input`.
+#' If the `input` is not an iterator, it will be converted into one using `make_iter`.
+#' 
+#' Returns an iterator for each value in each returned value in the `input` iterator. If it encounters a dataframe, it will be mapped by each row.
+#' @param input A stage output
+#' @export
 mapped <- function(input) {
     iter <- if (is_iter(input)) input else make_iter(input)
 

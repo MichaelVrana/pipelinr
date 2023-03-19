@@ -2,10 +2,20 @@ library(rlang)
 library(purrr)
 suppressPackageStartupMessages(library(qs))
 
-stage_inputs <- function(...) enquos(...)
-
 task_file_pattern <- ".*_out\\.qs$"
 
+#' Stage inputs constructor function. Should be used as the `inputs` parameter of a `stage` function.
+#' @export
+stage_inputs <- function(...) enquos(...)
+
+#' Pipeline stage constructor function
+#' 
+#' @param body A function that will be run with inputs as it's arguments
+#' @param inputs An expression constructed using `stage_inputs`, describes the body's inputs
+#' @export
+#' @examples
+#' stage(inputs = stage_inputs(a = 1:3 |> mapped()), body = function(a) a * 2)
+#' 
 stage <- function(body, inputs = stage_inputs(), save_results = FALSE, override_executor = NULL) {
     list(body = body, input_quosures = inputs, save_results = save_results, override_executor = override_executor)
 }

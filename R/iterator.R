@@ -2,14 +2,27 @@ library(utils)
 library(purrr)
 library(dplyr)
 
+#' Create an empty iterator returning no values.
+#' @export
+#'
 make_empty_iter <- function() {
     list(value = NULL, done = TRUE, next_iter = make_empty_iter)
 }
 
+#' Create an iterator returning a given value.
+#'
+#' @param value A value to be returned by the iterator.
+#' @param next_iter Used to specify the next iterator, defaults to empty iterator.
+#' @export
+#' 
 make_iter <- function(value, next_iter = make_empty_iter) {
     list(value = value, done = FALSE, next_iter = next_iter)
 }
 
+#' Create an iterator of a vector or a list.
+#' @param vec A vector or a list.
+#' @export
+#' 
 vec_to_iter <- function(vec) {
     if (is_empty(vec)) {
         return(make_empty_iter())
@@ -21,6 +34,10 @@ vec_to_iter <- function(vec) {
     )
 }
 
+#' Create an iterator over data frame rows
+#' @param df A data frame
+#' @export
+#' 
 df_to_iter <- function(df) {
     if (nrow(df) == 0) {
         return(make_empty_iter())
@@ -32,6 +49,17 @@ df_to_iter <- function(df) {
     )
 }
 
+#' Fold an iterator to a single value using a function
+#' @param iter An iterator to fold
+#' @param init Initial value of the accumulator
+#' @param fun A folding function accepting two arguments, first is a previous result and second is the current element
+#' @export
+#' @examples
+#' 
+#' iter <- vec_to_iter(1:5)
+#' sum <- fold_iter(iter, init = 0, fun(acc, curr) acc + curr)
+#' sum == 1 + 2 + 3 + 4 + 5
+#' 
 fold_iter <- function(iter, init, fun) {
     fold <- function(iter, acc) {
         if (iter$done) {
@@ -45,8 +73,31 @@ fold_iter <- function(iter, init, fun) {
     fold(iter, init)
 }
 
+#' Collect an iterator to a list of values
+#' @param iter Iterator
+#' @export
+#' @examples
+#' 
+#' iter <- vec_to_iter(1:3)
+#' collected <- collect(iter)
+#' collected == as.list(1:3)
+#' 
 collect <- function(iter) fold_iter(iter, list(), function(acc, curr) c(acc, list(curr)))
 
+#' Collect an iterator of named lists or dataframes into a data frame
+#' @param iter An iterator returning named lists
+#' @export
+#' @examples
+#' 
+#' data <- list(
+#'      list(numbers = 1, string = "a"),
+#'      data.frame(numbers = 2:3, strings = c("b", "c"))
+#' )
+#' 
+#' iter <- vec_to_iter(data)
+#' collected <- collect_df(iter)
+#' collected == data.frame(numbers = 1:3, strings = c("a", "b", "c"))
+#' 
 collect_df <- function(iter) {
     collected <- collect(iter)
 
@@ -57,6 +108,17 @@ collect_df <- function(iter) {
     lapply(collected, as.data.frame) %>% bind_rows()
 }
 
+#' Map values of an iterator using a function
+#' @param iter An iterator
+#' @param fun A mapping function accepting a single argument
+#' @export 
+#' @examples
+#' 
+#' iter <- vec_to_iter(1:3)
+#' mapped_iter <- map_iter(iter, function(x) x * 2)
+#' collected <- collect(mapped_iter)
+#' collected == list(2, 4, 6)
+#' 
 map_iter <- function(iter, fun) {
     if (iter$done) {
         return(make_empty_iter())
@@ -68,6 +130,17 @@ map_iter <- function(iter, fun) {
     )
 }
 
+#' Filter an iterators values using a predicate function
+#' @param iter An iterator
+#' @param predicate A predicate function taking a single argument and returning a boolean
+#' @export
+#' @examples 
+#' 
+#' iter <- vec_to_iter(1:5)
+#' filtered_iter <- filter_iter(iter, function(x) x %% 2 == 0)
+#' collected <- collect(filtered_iter)
+#' collected == list(2, 4)
+#' 
 filter_iter <- function(iter, predicate) {
     if (iter$done) {
         return(make_empty_iter())
@@ -83,8 +156,31 @@ filter_iter <- function(iter, predicate) {
     )
 }
 
+#' Check if a value is an iterator
+#' @param iter_like A value to check
+#' @export
+#' 
 is_iter <- function(iter_like) is_list(iter_like) && is_function(iter_like$next_iter) && is_logical(iter_like$done)
 
+#' Create a cross-product of two vectors
+#' @param iter1 An iterator
+#' @param iter2 An iterator
+#' @export
+#' @examples
+#' 
+#' numbers <- vec_to_iter(1:3)
+#' strings <- c("a", "b") |> vec_to_iter()
+#' crossed <- cross_iter(numbers, string)
+#' collected <- collect_iter(crossed)
+#' collected == list(
+#'     list(1, "a"),
+#'     list(1, "b"),
+#'     list(2, "a"),
+#'     list(2, "b"),
+#'     list(3, "a"),
+#'     list(3, "b"),
+#' )
+#' 
 cross_iter <- function(iter1, iter2) cross2(collect(iter1), collect(iter2)) %>% vec_to_iter()
 
 # cross_iter <- function(...) {
@@ -112,6 +208,19 @@ cross_iter <- function(iter1, iter2) cross2(collect(iter1), collect(iter2)) %>% 
 #     }
 # }
 
+#' Zips iterators together into a single iterator
+#' @export
+#' @examples
+#' 
+#' numbers <- vec_to_iter(1:3)
+#' strings <- c("a", "b") |> vec_to_iter()
+#' zipped <- zip_iter(numbers = numbers, strings = strings)
+#' collected <- collect(zipped)
+#' collected = list(
+#'     list(1, "a")
+#'     list(2, "b")
+#'     list(3, NULL)
+#' )
 zip_iter <- function(...) {
     iters <- list(...)
 
@@ -130,6 +239,9 @@ zip_iter <- function(...) {
     make_iter(value = values, next_iter = next_iter)
 }
 
+#' Creates an iterator that will cache returned values
+#' @param iter An iterator whose values will be cached
+#' @export
 memoize_iter <- function(iter) {
     next_iter_cache <- list()
 
@@ -154,6 +266,17 @@ memoize_iter <- function(iter) {
     make_memoize_iter(iter)
 }
 
+#' Take top `n` return by an iterator
+#' @param iter An iterator
+#' @param n An integer
+#' @export
+#' @examples
+#' 
+#' iter <- vec_to_iter(1:5)
+#' head <- head_iter(iter, 3)
+#' collected <- collect(iter)
+#' collected == as.list(1:3)
+#' 
 head_iter <- function(iter, n) {
     if (n < 0) stop("Cannot take negative number of elements from head", n)
 
@@ -167,6 +290,16 @@ head_iter <- function(iter, n) {
     )
 }
 
+#' Chain iterators together
+#' @export
+#' @examples
+#' 
+#' numbers <- vec_to_iter(1:3)
+#' strings <- c("a", "b") |> vec_to_iter()
+#' concatenated <- concat_iter(numbers, strings)
+#' collected <- collect(concatenated)
+#' collected == list(1, 2, 3, "a", "b")
+#' 
 concat_iter <- function(...) {
     iters <- list(...)
 
