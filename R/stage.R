@@ -26,12 +26,14 @@ clear_stage_dir <- function(pipeline_dir, stage_name) {
 
 task_file_path_from_output_file_path <- function(output_file_path) {
     basename(output_file_path) %>%
-        gsub("(task_[0-9]+)_out\\.qs$", "\\1.qs", .) %>%
+        gsub("(task_([a-f0-9])+)_out\\.qs$", "\\1.qs", .) %>%
         file.path(dirname(output_file_path), .)
 }
 
+get_stage_dir <- function(pipeline_dir, stage_name) file.path(pipeline_dir, stage_name)
+
 stage_outputs_iter <- function(stage_name, pipeline_dir) {
-    stage_dir <- file.path(pipeline_dir, stage_name)
+    stage_dir <- get_stage_dir(pipeline_dir, stage_name)
 
     list.files(stage_dir, pattern = task_file_pattern) %>%
         vec_to_iter() %>%
@@ -50,7 +52,10 @@ stage_outputs_iter <- function(stage_name, pipeline_dir) {
         })
 }
 
-stage_outputs_iter_to_results_iter <- function(ouputs_iter) map_iter(ouputs_iter, function(output) output$outputs$result)
+stage_outputs_iter_to_results_iter <- function(ouputs_iter) {
+    filter_iter(ouputs_iter, function(output) !output$outputs$failed) %>%
+        map_iter(., function(output) output$outputs$result)
+}
 
 stage_hash <- function(stage) {
     used_globals_and_packages <- find_used_globals_and_packages(stage$body)

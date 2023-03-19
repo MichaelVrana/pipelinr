@@ -16,7 +16,7 @@ task_result <- if (file.exists(task_result_filename)) qread(task_result_filename
 stdout <- read_file(stdout_filename)
 stderr <- read_file(stderr_filename)
 
-metadata <- list(exit_code = strtoi(exit_code), stdout = stdout, stderr = stderr)
+metadata <- list(failed = exit_code != "0", exit_code = strtoi(exit_code), stdout = stdout, stderr = stderr)
 
 result_with_metadata <- append(task_result, metadata)
 

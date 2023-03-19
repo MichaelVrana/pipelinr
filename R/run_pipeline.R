@@ -30,9 +30,16 @@ eval_inputs <- function(stage_results, input_quosures) {
 
 stage_tasks_iter <- function(stage, input_iters) {
     if (is_empty(stage$input_quosures)) {
-        make_iter(list(body = stage$body, args = list()))
+        make_iter(list(body = stage$body, args = list(), hash = rlang::hash(list())))
     } else {
-        do.call(zip_iter, input_iters) %>% map_iter(., function(inputs) list(body = stage$body, args = inputs))
+        do.call(zip_iter, input_iters) %>%
+            map_iter(., function(inputs) {
+                list(
+                    body = stage$body,
+                    args = inputs,
+                    hash = rlang::hash(inputs)
+                )
+            })
     }
 }
 
