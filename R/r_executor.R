@@ -26,6 +26,8 @@ exec_task <- function(stage, task, pipeline_dir) {
     task_result
 }
 
+#' R task executor. This is the default executor that runs tasks in the main R process.
+#' @export
 r_executor <- function(task_iter, stage, pipeline_dir) {
     stage_dir <- get_stage_dir(pipeline_dir, stage$name)
     if (!dir.exists(stage_dir)) dir.create(stage_dir, recursive = TRUE)

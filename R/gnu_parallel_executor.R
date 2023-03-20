@@ -1,6 +1,9 @@
 library(rlang)
 library(purrr)
 
+#' Constructor function of a GNU Parallel task executor. This executor runs tasks in parallel using GNU Parallel.
+#' @param ssh_login_file Path to GNU Parallel SSH login file. If the file is specified, tasks will be executed over SSH.
+#' @export
 make_gnu_parallel_executor <- function(ssh_login_file = "") {
     function(task_iter, stage, pipeline_dir) {
         body_with_globals <- find_used_globals_and_packages(stage$body)

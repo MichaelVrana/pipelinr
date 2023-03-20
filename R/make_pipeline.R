@@ -91,6 +91,21 @@ topsort <- function(stages) {
     append(stages_without_deps, topsorted_stages_with_new_deps)
 }
 
+#' Create a pipeline. Pipelines consists of stages constructed by `stage`. Each argument must be named and must be a stage object.
+#' @export
+#' @examples
+#' 
+#' pipeline <- make_pipeline(
+#'    numbers = stage(function() 1:3),
+#'    doubled = stage(function(numbers) numbers * 2),
+#'    squared = stage(
+#'        inputs = stage_inputs(
+#'            num = mapped(doubled_numbers)
+#'        ),
+#'        body = function(num) num * num
+#'    )
+#' )
+#' 
 make_pipeline <- function(...) {
     stages <- list(...) %>%
         with_names() %>%

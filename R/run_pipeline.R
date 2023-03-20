@@ -81,7 +81,12 @@ find_stage_names_to_run <- function(stages, pipeline_dir) {
         flatten_chr() %>%
         unique()
 }
-
+#' Runs a pipeline.
+#' @param pipeline A pipeline object constructed using `make_pipeline`.
+#' @param executor An executor function, defaults to R executor.
+#' @param pipeline_dir Filesystem path, defaults to `"pipeline"`` in the current working directory. This directory is used as cache for tasks and results.
+#' @param print_inputs Boolean, defaults to `FALSE`. If true, stage inputs will be printed to using the `str` function.
+#' @export
 run_pipeline <- function(pipeline, executor = r_executor, pipeline_dir = "pipeline", print_inputs = FALSE) {
     stages_to_run <- find_stage_names_to_run(pipeline$stages, pipeline_dir)
 
