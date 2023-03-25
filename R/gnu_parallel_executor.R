@@ -1,5 +1,6 @@
 library(rlang)
 library(purrr)
+library(qs)
 
 #' Constructor function of a GNU Parallel task executor. This executor runs tasks in parallel using GNU Parallel.
 #' @param ssh_login_file Path to GNU Parallel SSH login file. If the file is specified, tasks will be executed over SSH.
@@ -14,14 +15,40 @@ make_gnu_parallel_executor <- function(ssh_login_file = "") {
             env = as.environment(body_with_globals$globals)
         )
 
-        tasks <- map_iter(task_iter, function(task) {
-            list(body = task_body, args = task$args)
+        stage_dir <- get_stage_dir(pipeline_dir, stage$name)
+
+        file.path(stage_dir, "body.qs") %>% qsave(task_body, .)
+
+        task_filenames <- fold_iter(task_iter, character(), function(acc, task) {
+            filename <- paste("task_", task$hash, ".qs", sep = "")
+            qsave(task, filename)
+            c(acc, " ", filename)
         })
 
-        task_group <- list(tasks = collect(tasks), stage_name = stage$name)
+        ssh_login_file_normalized_path <- normalizePath(ssh_login_file)
+        curr_wd <- getwd()
+
+        setwd(stage_dir)
 
         clear_stage_dir(pipeline_dir, stage$name)
-        gnu_parallel_run_task_group(task_group, normalizePath(ssh_login_file), normalizePath(pipeline_dir))
+
+        args <- paste(
+            "--sshloginfile",
+            ssh_login_file_normalized_path,
+            "--transfer",
+            "--return",
+            "{.}_out.qs",
+            "./exec_task_and_collect_metadata.sh",
+            ":::",
+            "body.qs",
+            ":::", task_filenames
+        )
+
+        print(args)
+
+        system2("parallel", args = ., )
+
+        setwd(curr_wd)
 
         outputs_iter <- stage_outputs_iter(stage$name, pipeline_dir)
         results_iter <- stage_outputs_iter_to_results_iter(outputs_iter)

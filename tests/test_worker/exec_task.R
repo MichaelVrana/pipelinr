@@ -7,21 +7,14 @@ exec_task <- function() {
 
     task_filename <- args[[1]]
 
+    body <- qread("body.qs")
     task <- qread(task_filename)
 
-    for (package in task$packages) library(package, character.only = TRUE)
+    for (package in body$packages) library(package, character.only = TRUE)
 
-    if (typeof(task$body$fun) != "closure") {
-        stop("Task is missing a body function or it's not a function")
-    }
+    attach(body$env)
 
-    if (typeof(task$args) != "list") {
-        stop("Task is missing an args list or it's not a list")
-    }
-
-    attach(task$body$env)
-
-    result <- do.call(task$body$fun, task$args)
+    result <- do.call(body$fun, task$args)
 
     result_filename <- paste(file_path_sans_ext(task_filename), "_out.qs", sep = "")
 
