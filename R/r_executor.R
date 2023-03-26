@@ -21,9 +21,13 @@ exec_task <- function(stage, task) {
 #' R task executor. This is the default executor that runs tasks in the main R process.
 #' @export
 r_executor <- function(task_iter, stage) {
-    stage_dir <- get_stage_dir(stage$name)
+    memoized_task_iter <- memoize_iter(task_iter)
+    task_count <- iter_length(memoized_task_iter)
 
-    if (!dir.exists(stage_dir)) dir.create(stage_dir, recursive = TRUE)
+    bar <- create_task_execution_progress_bar(stage$name, task_count)
 
-    for_each_iter(task_iter, function(task) exec_task(stage, task))
+    for_each_iter(memoized_task_iter, function(task) {
+        exec_task(stage, task)
+        bar$tick()
+    })
 }

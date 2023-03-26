@@ -114,6 +114,8 @@ run_pipeline <- function(pipeline, executor = r_executor, print_inputs = FALSE) 
             results = list(),
             metadata = list()
         ), function(stage_results, stage) {
+            paste("Executing stage ", stage$name, "\n", sep = "") %>% cat()
+
             input_iters <- eval_inputs(stage_results, stage$input_quosures)
             task_iter <- stage_tasks_iter(stage, input_iters) %>% filter_stage_tasks_to_execute(stage$name, .)
 
@@ -125,6 +127,8 @@ run_pipeline <- function(pipeline, executor = r_executor, print_inputs = FALSE) 
                 stage_executor <- if (!is.null(stage$override_executor)) stage$override_executor else executor
 
                 stage_executor(task_iter, stage = stage)
+            } else {
+                paste("No unevaluated tasks found for stage ", stage$name, "\n", sep = "") %>% cat()
             }
 
             stage_results$results[[stage$name]] <- task_results_iter(stage$name)

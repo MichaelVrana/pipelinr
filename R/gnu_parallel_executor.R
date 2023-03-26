@@ -35,6 +35,7 @@ make_gnu_parallel_executor <- function(ssh_login_file = "") {
             "--transfer",
             "--return",
             "{.}_out.qs",
+            "--cleanup",
             "--basefile",
             "body.qs",
             "./exec_task_and_collect_metadata.sh",

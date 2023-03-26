@@ -336,3 +336,7 @@ for_each_iter <- function(iter, fun) {
     fun(iter$value)
     for_each_iter(iter$next_iter(), fun)
 }
+
+iter_length <- function(iter) {
+    fold_iter(iter, 0, function(acc, curr) acc + 1)
+}
