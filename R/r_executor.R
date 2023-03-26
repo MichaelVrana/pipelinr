@@ -2,8 +2,8 @@ library(rlang)
 library(purrr)
 library(qs)
 
-exec_task <- function(stage, task, pipeline_dir) {
-    stage_dir <- get_stage_dir(pipeline_dir, stage$name)
+exec_task <- function(stage, task) {
+    stage_dir <- get_stage_dir(stage$name)
 
     task_filename <- paste("task_", task$hash, ".qs", sep = "")
     task_filepath <- file.path(stage_dir, task_filename)
@@ -28,11 +28,12 @@ exec_task <- function(stage, task, pipeline_dir) {
 
 #' R task executor. This is the default executor that runs tasks in the main R process.
 #' @export
-r_executor <- function(task_iter, stage, pipeline_dir) {
-    stage_dir <- get_stage_dir(pipeline_dir, stage$name)
+r_executor <- function(task_iter, stage) {
+    stage_dir <- get_stage_dir(stage$name)
+
     if (!dir.exists(stage_dir)) dir.create(stage_dir, recursive = TRUE)
 
-    results_iter <- map_iter(task_iter, function(task) exec_task(stage, task, pipeline_dir)) %>% memoize_iter()
+    results_iter <- map_iter(task_iter, function(task) exec_task(stage, task)) %>% memoize_iter()
 
     list(
         results_iter = filter_iter(results_iter, function(task_result) !task_result$failed) %>% map_iter(., function(task_result) task_result$result),

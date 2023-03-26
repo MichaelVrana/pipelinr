@@ -9,19 +9,19 @@ task_file_pattern <- ".*_out\\.qs$"
 stage_inputs <- function(...) enquos(...)
 
 #' Pipeline stage constructor function
-#' 
+#'
 #' @param body A function that will be run with inputs as it's arguments
 #' @param inputs An expression constructed using `stage_inputs`, describes the body's inputs
 #' @export
 #' @examples
 #' stage(inputs = stage_inputs(a = 1:3 |> mapped()), body = function(a) a * 2)
-#' 
+#'
 stage <- function(body, inputs = stage_inputs(), save_results = FALSE, override_executor = NULL) {
     list(body = body, input_quosures = inputs, save_results = save_results, override_executor = override_executor)
 }
 
-clear_stage_dir <- function(pipeline_dir, stage_name) {
-    stage_dir <- file.path(pipeline_dir, stage_name)
+clear_stage_dir <- function(stage_name) {
+    stage_dir <- get_stage_dir(stage_name)
 
     if (!file.exists(stage_dir)) {
         return()
@@ -40,10 +40,12 @@ task_file_path_from_output_file_path <- function(output_file_path) {
         file.path(dirname(output_file_path), .)
 }
 
-get_stage_dir <- function(pipeline_dir, stage_name) file.path(pipeline_dir, stage_name)
+get_pipeline_dir <- function() getOption("pipeline_dir", "pipeline") %>% normalizePath()
 
-stage_outputs_iter <- function(stage_name, pipeline_dir) {
-    stage_dir <- get_stage_dir(pipeline_dir, stage_name)
+get_stage_dir <- function(stage_name) get_pipeline_dir() %>% file.path(., stage_name)
+
+stage_outputs_iter <- function(stage_name) {
+    stage_dir <- get_stage_dir(stage_name)
 
     list.files(stage_dir, pattern = task_file_pattern) %>%
         vec_to_iter() %>%

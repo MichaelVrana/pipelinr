@@ -57,9 +57,9 @@ print_stage_inputs <- function(stage_name, task_iter) {
     print_task_iter(task_iter)
 }
 
-find_stage_names_to_run <- function(stages, pipeline_dir) {
+find_stage_names_to_run <- function(stages) {
     updated_or_new_stages <- keep(stages, function(stage) {
-        stage_hash_path <- file.path(pipeline_dir, stage$name, "stage_hash")
+        stage_hash_path <- file.path(get_stage_dir(stage$name), "stage_hash")
 
         if (!file.exists(stage_hash_path)) {
             return(TRUE)
@@ -80,11 +80,10 @@ find_stage_names_to_run <- function(stages, pipeline_dir) {
 #' Runs a pipeline.
 #' @param pipeline A pipeline object constructed using `make_pipeline`.
 #' @param executor An executor function, defaults to R executor.
-#' @param pipeline_dir Filesystem path, defaults to `"pipeline"`` in the current working directory. This directory is used as cache for tasks and results.
 #' @param print_inputs Boolean, defaults to `FALSE`. If true, stage inputs will be printed to using the `str` function.
 #' @export
-run_pipeline <- function(pipeline, executor = r_executor, pipeline_dir = "pipeline", print_inputs = FALSE) {
-    stages_to_run <- find_stage_names_to_run(pipeline$stages, pipeline_dir)
+run_pipeline <- function(pipeline, executor = r_executor, print_inputs = FALSE) {
+    stages_to_run <- find_stage_names_to_run(pipeline$stages)
 
     exec_order <- keep(pipeline$exec_order, function(stage) has_element(stages_to_run, stage$name))
 
@@ -94,7 +93,7 @@ run_pipeline <- function(pipeline, executor = r_executor, pipeline_dir = "pipeli
                 results = list(),
                 metadata = list()
             ), function(results, stage) {
-                outputs_iter <- stage_outputs_iter(stage$name, pipeline_dir)
+                outputs_iter <- stage_outputs_iter(stage$name)
                 results_iter <- stage_outputs_iter_to_results_iter(outputs_iter)
 
                 results$results[[stage$name]] <- outputs_iter
@@ -111,7 +110,7 @@ run_pipeline <- function(pipeline, executor = r_executor, pipeline_dir = "pipeli
 
         stage_executor <- if (!is.null(stage$override_executor)) stage$override_executor else executor
 
-        output_iters <- stage_executor(task_iter, stage = stage, pipeline_dir = pipeline_dir)
+        output_iters <- stage_executor(task_iter, stage = stage)
 
         stage_results$results[[stage$name]] <- output_iters$results
         stage_results$metadata[[stage$name]] <- output_iters$metadata_iter
