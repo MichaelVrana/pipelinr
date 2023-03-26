@@ -56,17 +56,20 @@ print_task_iter <- function(task_iter, idx = 0) {
         return()
     }
 
-    cat("Input ", toString(idx), ":\n", sep = "")
-    cat("================================================================================\n")
-    str(task_iter$value$args)
-    cat("================================================================================\n\n")
+
 
     print_task_iter(task_iter$next_iter(), idx + 1)
 }
 
-print_stage_inputs <- function(stage_name, task_iter) {
+print_stage_tasks <- function(stage_name, task_iter) {
     cat("Stage ", stage_name, " inputs:\n", sep = "")
-    print_task_iter(task_iter)
+
+    for_each_iter(task_iter, function(task) {
+        cat("Task ", task$hash, ":\n", sep = "")
+        cat("================================================================================\n")
+        str(task$args)
+        cat("================================================================================\n\n")
+    })
 }
 
 find_stage_names_to_run <- function(stages) {
@@ -114,13 +117,15 @@ run_pipeline <- function(pipeline, executor = r_executor, print_inputs = FALSE) 
             input_iters <- eval_inputs(stage_results, stage$input_quosures)
             task_iter <- stage_tasks_iter(stage, input_iters) %>% filter_stage_tasks_to_execute(stage$name, .)
 
-            save_tasks(task_iter)
+            if (!task_iter$done) {
+                save_tasks(stage$name, task_iter)
 
-            if (print_inputs) print_stage_inputs(stage$name, task_iter)
+                if (print_inputs) print_stage_tasks(stage$name, task_iter)
 
-            stage_executor <- if (!is.null(stage$override_executor)) stage$override_executor else executor
+                stage_executor <- if (!is.null(stage$override_executor)) stage$override_executor else executor
 
-            stage_executor(task_iter, stage = stage)
+                stage_executor(task_iter, stage = stage)
+            }
 
             stage_results$results[[stage$name]] <- task_results_iter(stage$name)
             stage_results$metadata[[stage$name]] <- stage_metadata_iter(stage$name)

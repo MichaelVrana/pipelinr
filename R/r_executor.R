@@ -13,7 +13,7 @@ exec_task <- function(stage, task) {
 
     task_result <- if (is_error) list(error = result, failed = TRUE) else list(result = result, failed = FALSE)
 
-    task_output_path <- get_task_output_filename(stage$name, task$hash)
+    task_output_path <- get_task_output_path(stage$name, task$hash)
 
     qsave(task_result, task_output_path)
 }

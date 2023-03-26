@@ -20,7 +20,7 @@ make_gnu_parallel_executor <- function(ssh_login_file = "") {
         file.path(stage_dir, "body.qs") %>% qsave(task_body, .)
 
         task_filenames <- fold_iter(task_iter, character(), function(acc, task) {
-            c(acc, get_task_path(stage_dir, task$hash))
+            c(acc, get_task_filename(task$hash))
         })
 
         ssh_login_file_normalized_path <- normalizePath(ssh_login_file)

@@ -1,5 +1,5 @@
 test_that("Metadata function retrieves stage metadata", {
-    options(pipeline_dir = "../resources/pipeline_metadata")
+    options(pipeline_dir = "pipeline_metadata")
 
     data <- list(
         list(number = 1, str = "a"),
@@ -19,14 +19,14 @@ test_that("Metadata function retrieves stage metadata", {
 
     results <- run_pipeline(pipeline)
 
-    stdout <- map_iter(results$results$metadata_stage, function(meta) meta$outputs$stdout) %>%
+    stdout <- map_iter(results$results$metadata_stage, function(meta) meta$stdout) %>%
         collect()
 
     expect_equal(stdout, map(1:3, function(x) "[1] \"This will be in stdout\"\n"))
 })
 
 test_that("It correctly serializes function with it's globals", {
-    options(pipeline_dir = "../resources/pipeline_globals")
+    options(pipeline_dir = "pipeline_globals")
 
     gnu_parallel_executor <- make_gnu_parallel_executor(ssh_login_file = "../test_worker/nodefile")
 

@@ -1,4 +1,6 @@
 test_that("Pipeline evaluates mapped input", {
+    options(pipeline_dir = "pipeline_mapped")
+
     pipeline <- make_pipeline(
         stage1 = stage(function() {
             list(
@@ -16,9 +18,5 @@ test_that("Pipeline evaluates mapped input", {
 
     actual <- collect(stage_results$results$stage2)
 
-    expect_equal(actual, list(
-        list(number = 2, str = "a"),
-        list(number = 4, str = "b"),
-        list(number = 6, str = "c")
-    ))
+    expect_snapshot(actual)
 })

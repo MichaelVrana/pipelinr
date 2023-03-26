@@ -10,11 +10,11 @@ get_task_path <- function(stage_name, task_hash) {
 }
 
 get_task_output_filename <- function(task_hash) {
-    paste("task_", task_hash, ".qs", sep = "")
+    paste("task_", task_hash, "_out.qs", sep = "")
 }
 
 get_task_output_path <- function(stage_name, task_hash) {
-    file.path(get_stage_dir(stage_name), get_task_filename(task_hash))
+    file.path(get_stage_dir(stage_name), get_task_output_filename(task_hash))
 }
 
 read_task_output <- function(stage_name, task_hash) {
@@ -52,7 +52,9 @@ stage_task_outputs_iter <- function(stage_name) {
 
     list.files(stage_dir, pattern = task_output_filename_regex) %>%
         vec_to_iter() %>%
-        map_iter(., qread)
+        map_iter(., function(filename) {
+            file.path(stage_dir, filename) %>% qread()
+        })
 }
 
 task_results_iter <- function(stage_name) {

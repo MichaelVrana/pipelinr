@@ -1,4 +1,6 @@
 test_that("Pipeline evaluates crossed inputs", {
+    options(pipeline_dir = "pipeline_crossed")
+
     pipeline <- make_pipeline(
         numbers = stage(function() {
             1:3
@@ -22,12 +24,5 @@ test_that("Pipeline evaluates crossed inputs", {
     
     actual <- collect(stage_results$results$crossed)
 
-    expect_equal(actual, list(
-        list(2, "a"),
-        list(4, "a"),
-        list(6, "a"),
-        list(2, "b"),
-        list(4, "b"),
-        list(6, "b")
-    ))
+    expect_snapshot(actual)
 })
