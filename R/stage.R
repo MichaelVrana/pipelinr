@@ -27,7 +27,7 @@ clear_stage_dir <- function(stage_name) {
         return()
     }
 
-    files_to_remove <- list.files(stage_dir, pattern = task_file_pattern) %>%
+    files_to_remove <- list.files(stage_dir) %>%
         map(., function(filename) file.path(stage_dir, filename)) %>%
         unlist()
 

@@ -106,7 +106,7 @@ create_stage_dirs <- function(stage_names) {
 #' @param executor An executor function, defaults to R executor.
 #' @param print_inputs Boolean, defaults to `FALSE`. If true, stage inputs will be printed to using the `str` function.
 #' @export
-run_pipeline <- function(pipeline, executor = r_executor, print_inputs = FALSE) {
+run_pipeline <- function(pipeline, executor = r_executor, print_inputs = FALSE, clean = FALSE) {
     create_stage_dirs(pipeline$stages %>% names())
 
     reduce(pipeline$exec_order,
@@ -115,6 +115,8 @@ run_pipeline <- function(pipeline, executor = r_executor, print_inputs = FALSE) 
             metadata = list()
         ), function(stage_results, stage) {
             paste("Executing stage ", stage$name, "\n", sep = "") %>% cat()
+
+            if (clean) clear_stage_dir(stage$name)
 
             input_iters <- eval_inputs(stage_results, stage$input_quosures)
             task_iter <- stage_tasks_iter(stage, input_iters) %>% filter_stage_tasks_to_execute(stage$name, .)
