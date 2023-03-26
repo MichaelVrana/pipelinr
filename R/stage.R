@@ -34,35 +34,9 @@ clear_stage_dir <- function(stage_name) {
     if (!is_empty(files_to_remove)) file.remove(files_to_remove)
 }
 
-task_file_path_from_output_file_path <- function(output_file_path) {
-    basename(output_file_path) %>%
-        gsub("(task_([a-f0-9])+)_out\\.qs$", "\\1.qs", .) %>%
-        file.path(dirname(output_file_path), .)
-}
-
 get_pipeline_dir <- function() getOption("pipeline_dir", "pipeline") %>% normalizePath()
 
 get_stage_dir <- function(stage_name) get_pipeline_dir() %>% file.path(., stage_name)
-
-stage_outputs_iter <- function(stage_name) {
-    stage_dir <- get_stage_dir(stage_name)
-
-    list.files(stage_dir, pattern = task_file_pattern) %>%
-        vec_to_iter() %>%
-        map_iter(., function(filename) {
-            if (is.null(filename)) {
-                return(NULL)
-            }
-
-            outputs_file_path <- file.path(stage_dir, filename)
-            task_file_path <- task_file_path_from_output_file_path(outputs_file_path)
-
-            outputs <- qread(outputs_file_path)
-            task <- qread(task_file_path)
-
-            list(task = task, outputs = outputs)
-        })
-}
 
 stage_outputs_iter_to_results_iter <- function(ouputs_iter) {
     filter_iter(ouputs_iter, function(output) !output$outputs$failed) %>%

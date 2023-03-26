@@ -330,3 +330,9 @@ concat_iter <- function(...) {
         }
     )
 }
+
+for_each_iter <- function(iter, fun) {
+    if (iter$done) return(NULL)
+    fun(iter$value)
+    for_each_iter(iter$next_iter(), fun)
+}

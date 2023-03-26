@@ -17,14 +17,10 @@ make_gnu_parallel_executor <- function(ssh_login_file = "") {
 
         stage_dir <- get_stage_dir(stage$name)
 
-        if (!dir.exists(stage_dir)) dir.create(stage_dir, recursive = TRUE)
-
         file.path(stage_dir, "body.qs") %>% qsave(task_body, .)
 
         task_filenames <- fold_iter(task_iter, character(), function(acc, task) {
-            filename <- paste("task_", task$hash, ".qs", sep = "")
-            file.path(stage_dir, filename) %>% qsave(task, .)
-            c(acc, filename)
+            c(acc, get_task_path(stage_dir, task$hash))
         })
 
         ssh_login_file_normalized_path <- normalizePath(ssh_login_file)
@@ -32,8 +28,6 @@ make_gnu_parallel_executor <- function(ssh_login_file = "") {
         curr_wd <- getwd()
 
         setwd(stage_dir)
-
-        clear_stage_dir(stage$name)
 
         args <- c(
             "--sshloginfile",
@@ -51,10 +45,5 @@ make_gnu_parallel_executor <- function(ssh_login_file = "") {
         system2("parallel", args = args)
 
         setwd(curr_wd)
-
-        outputs_iter <- stage_outputs_iter(stage$name)
-        results_iter <- stage_outputs_iter_to_results_iter(outputs_iter)
-
-        list(results_iter = results_iter, metadata_iter = outputs_iter)
     }
 }

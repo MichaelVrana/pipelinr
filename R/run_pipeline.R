@@ -39,6 +39,18 @@ stage_tasks_iter <- function(stage, input_iters) {
     }
 }
 
+filter_stage_tasks_to_execute <- function(stage_name, task_iter) {
+    filter_iter(task_iter, function(task) {
+        task_output_path <- get_task_output_path(stage_name, task$hash)
+
+        if (!file.exists(task_output_path)) {
+            return(TRUE)
+        }
+
+        read_task_output(stage_name, task$hash) %>% pluck("failed")
+    })
+}
+
 print_task_iter <- function(task_iter, idx = 0) {
     if (task_iter$done) {
         return()
@@ -77,43 +89,42 @@ find_stage_names_to_run <- function(stages) {
         flatten_chr() %>%
         unique()
 }
+
+create_stage_dirs <- function(stage_names) {
+    for (stage_name in stage_names) {
+        stage_dir <- get_stage_dir(stage_name)
+
+        if (!dir.exists(stage_dir)) dir.create(stage_dir, recursive = TRUE)
+    }
+}
+
 #' Runs a pipeline.
 #' @param pipeline A pipeline object constructed using `make_pipeline`.
 #' @param executor An executor function, defaults to R executor.
 #' @param print_inputs Boolean, defaults to `FALSE`. If true, stage inputs will be printed to using the `str` function.
 #' @export
 run_pipeline <- function(pipeline, executor = r_executor, print_inputs = FALSE) {
-    stages_to_run <- find_stage_names_to_run(pipeline$stages)
+    create_stage_dirs(pipeline$stages %>% names())
 
-    exec_order <- keep(pipeline$exec_order, function(stage) has_element(stages_to_run, stage$name))
+    reduce(pipeline$exec_order,
+        .init = list(
+            results = list(),
+            metadata = list()
+        ), function(stage_results, stage) {
+            input_iters <- eval_inputs(stage_results, stage$input_quosures)
+            task_iter <- stage_tasks_iter(stage, input_iters) %>% filter_stage_tasks_to_execute(stage$name, .)
 
-    init_results <- discard(pipeline$exec_order, function(stage) has_element(stages_to_run, stage$name)) %>%
-        reduce(.,
-            .init = list(
-                results = list(),
-                metadata = list()
-            ), function(results, stage) {
-                outputs_iter <- stage_outputs_iter(stage$name)
-                results_iter <- stage_outputs_iter_to_results_iter(outputs_iter)
+            save_tasks(task_iter)
 
-                results$results[[stage$name]] <- outputs_iter
-                results$metadata[[stage$name]] <- results_iter
-                results
-            }
-        )
+            if (print_inputs) print_stage_inputs(stage$name, task_iter)
 
-    reduce(exec_order, function(stage_results, stage) {
-        input_iters <- eval_inputs(stage_results, stage$input_quosures)
-        task_iter <- stage_tasks_iter(stage, input_iters)
+            stage_executor <- if (!is.null(stage$override_executor)) stage$override_executor else executor
 
-        if (print_inputs) print_stage_inputs(stage$name, task_iter)
+            stage_executor(task_iter, stage = stage)
 
-        stage_executor <- if (!is.null(stage$override_executor)) stage$override_executor else executor
-
-        output_iters <- stage_executor(task_iter, stage = stage)
-
-        stage_results$results[[stage$name]] <- output_iters$results
-        stage_results$metadata[[stage$name]] <- output_iters$metadata_iter
-        stage_results
-    }, .init = init_results)
+            stage_results$results[[stage$name]] <- task_results_iter(stage$name)
+            stage_results$metadata[[stage$name]] <- stage_metadata_iter(stage$name)
+            stage_results
+        }
+    )
 }
