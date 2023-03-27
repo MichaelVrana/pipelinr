@@ -41,7 +41,7 @@ merge_lists <- function(...) {
 
 #' DSL function to create a task for each value in `input`.
 #' If the `input` is not an iterator, it will be converted into one using `make_iter`.
-#' 
+#'
 #' Returns an iterator for each value in each returned value in the `input` iterator. If it encounters a dataframe, it will be mapped by each row.
 #' @param input A stage output
 #' @export
@@ -52,4 +52,21 @@ mapped <- function(input) {
         curr_iter <- if (is.data.frame(curr)) df_to_iter(curr) else vec_to_iter(curr)
         concat_iter(prev_iter, curr_iter)
     })
+}
+
+stage_metadata <- function(stage_name) {
+    stage_dir <- get_stage_dir(stage_name)
+
+    if (!dir.exists(stage_dir)) paste("Couldn't find metadata for stage", stage_name) %>% stop()
+
+    stage_metadata_iter(stage_name) %>% collect()
+}
+
+
+stage_metadata_df <- function(stage_name) {
+    stage_dir <- get_stage_dir(stage_name)
+
+    if (!dir.exists(stage_dir)) paste("Couldn't find metadata for stage", stage_name) %>% stop()
+
+    stage_metadata_iter(stage_name) %>% collect_df()
 }
