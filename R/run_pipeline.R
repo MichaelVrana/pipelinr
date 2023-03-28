@@ -1,6 +1,7 @@
 library(rlang)
 library(purrr)
 library(readr)
+library(qs)
 
 create_metadata_function <- function(metadata_iters) {
     function(stage_symbol) {
@@ -39,26 +40,27 @@ stage_tasks_iter <- function(stage, input_iters) {
     }
 }
 
-filter_stage_tasks_to_execute <- function(stage_name, task_iter) {
-    filter_iter(task_iter, function(task) {
+unevaluated_task_filter_factory <- function(stage_name) {
+    function(task) {
         task_output_path <- get_task_output_path(stage_name, task$hash)
-
-        if (!file.exists(task_output_path)) {
-            return(TRUE)
-        }
-
-        read_task_output(stage_name, task$hash) %>% pluck("failed")
-    })
+        !file.exists(task_output_path)
+    }
 }
 
-print_task_iter <- function(task_iter, idx = 0) {
-    if (task_iter$done) {
-        return()
+create_metadata_task_filter_factory <- function(filter_quo) {
+    function(stage_name) {
+        function(task) {
+            task_output_path <- get_task_output_path(stage_name, task$hash)
+
+            task_output <- if (file.exists(task_output_path)) {
+                qread(task_output_path)
+            } else {
+                list()
+            }
+
+            eval_tidy(filter_quo, data = c(task, task_output))
+        }
     }
-
-
-
-    print_task_iter(task_iter$next_iter(), idx + 1)
 }
 
 print_stage_tasks <- function(stage_name, task_iter) {
@@ -106,8 +108,14 @@ create_stage_dirs <- function(stage_names) {
 #' @param executor An executor function, defaults to R executor.
 #' @param print_inputs Boolean, defaults to `FALSE`. If true, stage inputs will be printed to using the `str` function.
 #' @export
-run_pipeline <- function(pipeline, executor = r_executor, print_inputs = FALSE, clean = FALSE) {
+run_pipeline <- function(pipeline, executor = r_executor, print_inputs = FALSE, clean = FALSE, where = NULL) {
     create_stage_dirs(pipeline$stages %>% names())
+
+    task_filter_factory <- if (!missing(where)) {
+        enquo(where) %>% create_metadata_task_filter_factory()
+    } else {
+        unevaluated_task_filter_factory
+    }
 
     reduce(pipeline$exec_order,
         .init = list(
@@ -119,7 +127,7 @@ run_pipeline <- function(pipeline, executor = r_executor, print_inputs = FALSE, 
             if (clean) clear_stage_dir(stage$name)
 
             input_iters <- eval_inputs(stage_results, stage$input_quosures)
-            task_iter <- stage_tasks_iter(stage, input_iters) %>% filter_stage_tasks_to_execute(stage$name, .)
+            task_iter <- stage_tasks_iter(stage, input_iters) %>% filter_iter(., task_filter_factory(stage$name))
 
             if (!task_iter$done) {
                 save_tasks(stage$name, task_iter)

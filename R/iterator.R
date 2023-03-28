@@ -99,13 +99,7 @@ collect <- function(iter) fold_iter(iter, list(), function(acc, curr) c(acc, lis
 #' collected == data.frame(numbers = 1:3, strings = c("a", "b", "c"))
 #' 
 collect_df <- function(iter) {
-    collected <- collect(iter)
-
-    if (every(collected, is.data.frame)) {
-        return(bind_rows(collected))
-    }
-
-    lapply(collected, as.data.frame) %>% bind_rows()
+    collect(iter) %>% bind_rows()
 }
 
 #' Map values of an iterator using a function
