@@ -1,5 +1,5 @@
 test_that("Pipeline evaluates mapped input", {
-    options(pipeline_dir = "pipeline_mapped")
+    options(pipelinr_dir = "pipeline_mapped")
 
     pipeline <- make_pipeline(
         stage1 = stage(function() {

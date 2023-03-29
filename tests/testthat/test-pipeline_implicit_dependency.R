@@ -1,5 +1,5 @@
 test_that("Implicit dependency is correctly detected", {
-    options(pipeline_dir = "pipeline_implicit_dependency")
+    options(pipelinr_dir = "pipeline_implicit_dependency")
 
     pipeline <- make_pipeline(
         a = stage(function() 1:3),

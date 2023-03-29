@@ -58,7 +58,9 @@ create_metadata_task_filter_factory <- function(filter_quo) {
                 list()
             }
 
-            eval_tidy(filter_quo, data = c(task, task_output))
+            result <- eval_tidy(filter_quo, data = c(task, task_output))
+
+            is.logical(result) && length(result) == 1 && result
         }
     }
 }

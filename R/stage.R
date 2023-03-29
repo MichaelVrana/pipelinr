@@ -34,7 +34,7 @@ clear_stage_dir <- function(stage_name) {
     if (!is_empty(files_to_remove)) file.remove(files_to_remove)
 }
 
-get_pipeline_dir <- function() getOption("pipeline_dir", "pipeline") %>% normalizePath()
+get_pipeline_dir <- function() getOption("pipelinr_dir", "pipeline") %>% normalizePath()
 
 get_stage_dir <- function(stage_name) get_pipeline_dir() %>% file.path(., stage_name)
 

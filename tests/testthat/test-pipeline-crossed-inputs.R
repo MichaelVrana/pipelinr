@@ -1,5 +1,5 @@
 test_that("Pipeline evaluates crossed inputs", {
-    options(pipeline_dir = "pipeline_crossed")
+    options(pipelinr_dir = "pipeline_crossed")
 
     pipeline <- make_pipeline(
         numbers = stage(function() {
