@@ -26,4 +26,4 @@ pipeline <- make_pipeline(
     )
 )
 
-run_pipeline(pipeline, print_inputs = TRUE)
+make(pipeline = pipeline, print_inputs = TRUE)

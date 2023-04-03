@@ -18,9 +18,9 @@ test_that("Pipeline evaluates crossed inputs", {
         )
     )
 
-    results <- run_pipeline(pipeline)
+    results <- make(pipeline = pipeline)
 
-    stage_results <- run_pipeline(pipeline)
+    stage_results <- make(pipeline = pipeline)
     
     actual <- collect(stage_results$results$crossed)
 

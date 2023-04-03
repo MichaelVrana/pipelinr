@@ -10,4 +10,4 @@ pipeline <- make_pipeline(
     })
 )
 
-run_pipeline(pipeline)
+make(pipeline = pipeline)

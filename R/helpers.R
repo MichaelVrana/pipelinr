@@ -62,7 +62,6 @@ stage_metadata <- function(stage_name) {
     stage_metadata_iter(stage_name) %>% collect()
 }
 
-
 stage_metadata_df <- function(stage_name) {
     stage_dir <- get_stage_dir(stage_name)
 

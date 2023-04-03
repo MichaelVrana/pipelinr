@@ -31,4 +31,4 @@ pipeline <- make_pipeline(
     )
 )
 
-results <- run_pipeline(pipeline)
+results <- make(pipeline = pipeline)

@@ -105,12 +105,16 @@ create_stage_dirs <- function(stage_names) {
     }
 }
 
+load_pipeline <- function() {
+    getOption("pipelinr_pipeline_file", "pipeline.R") %>% read_file() %>% parse() %>% eval(., envir = new.env())
+}
+
 #' Runs a pipeline.
 #' @param pipeline A pipeline object constructed using `make_pipeline`.
 #' @param executor An executor function, defaults to R executor.
 #' @param print_inputs Boolean, defaults to `FALSE`. If true, stage inputs will be printed to using the `str` function.
 #' @export
-run_pipeline <- function(pipeline, executor = r_executor, print_inputs = FALSE, clean = FALSE, where = NULL) {
+make <- function(pipeline = load_pipeline(), only = NULL, from = NULL, where = NULL, clean = FALSE, executor = r_executor, print_inputs = FALSE) {
     create_stage_dirs(pipeline$stages %>% names())
 
     task_filter_factory <- if (!missing(where)) {
@@ -119,7 +123,13 @@ run_pipeline <- function(pipeline, executor = r_executor, print_inputs = FALSE, 
         unevaluated_task_filter_factory
     }
 
-    reduce(pipeline$exec_order,
+    stages_to_exec <- if (!missing(only)) {
+        intersect(pipeline$exec_order, toString(only))
+    } else {
+        pipeline$exec_order
+    }
+
+    reduce(stages_to_exec,
         .init = list(
             results = list(),
             metadata = list()
