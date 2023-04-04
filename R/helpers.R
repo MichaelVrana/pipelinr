@@ -69,3 +69,10 @@ stage_metadata_df <- function(stage_name) {
 
     stage_metadata_iter(stage_name) %>% collect_df()
 }
+
+set_names <- function(obj, names) {
+    names(obj) <- names
+    obj
+}
+
+to_stage_names <- function(stages) map_chr(stages, function(stage) stage$name)

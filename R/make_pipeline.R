@@ -15,7 +15,7 @@ find_unbound_body_args <- function(stage) {
         return(character())
     }
 
-    names(unbound) <- unbound
+    names(unbound) <- as.character(unbound)
     unbound
 }
 
@@ -62,12 +62,16 @@ with_deps <- function(stages) {
     })
 }
 
-topsort <- function(stages) {
+topsort <- function(stages, sorted_stages = list()) {
     if (is_empty(stages)) {
-        return(list())
+        return(sorted_stages)
     }
 
-    partitioned_stages <- partition(stages, function(stage) is_empty(stage$deps))
+    sorted_stage_names <- to_stage_names(sorted_stages)
+
+    partitioned_stages <- partition(stages, function(stage) {
+        setdiff(stage$deps, sorted_stage_names) %>% is_empty()
+    })
 
     stages_without_deps <- partitioned_stages$true
     stages_with_deps <- partitioned_stages$false
@@ -76,40 +80,34 @@ topsort <- function(stages) {
         stop("Cycle in stage dependencies detected")
     }
 
-    stage_names_without_deps <- map(stages_without_deps, function(stage) stage$name)
+    topsort(stages_with_deps, append(sorted_stages, stages_without_deps))
+}
 
-    stages_with_new_deps <- map(stages_with_deps, function(stage) {
-        new_deps <- setdiff(stage$deps, stage_names_without_deps)
-
-        new_stage <- c(stage)
-        new_stage$deps <- new_deps
-        new_stage
-    })
-
-    topsorted_stages_with_new_deps <- topsort(stages_with_new_deps)
-
-    append(stages_without_deps, topsorted_stages_with_new_deps)
+with_stage_names <- function(stages) {
+    map_chr(stages, function(stage) stage$name) %>% set_names(stages, .)
 }
 
 #' Create a pipeline. Pipelines consists of stages constructed by `stage`. Each argument must be named and must be a stage object.
 #' @export
 #' @examples
-#' 
+#'
 #' pipeline <- make_pipeline(
-#'    numbers = stage(function() 1:3),
-#'    doubled = stage(function(numbers) numbers * 2),
-#'    squared = stage(
-#'        inputs = stage_inputs(
-#'            num = mapped(doubled_numbers)
-#'        ),
-#'        body = function(num) num * num
-#'    )
+#'     numbers = stage(function() 1:3),
+#'     doubled = stage(function(numbers) numbers * 2),
+#'     squared = stage(
+#'         inputs = stage_inputs(
+#'             num = mapped(doubled_numbers)
+#'         ),
+#'         body = function(num) num * num
+#'     )
 #' )
-#' 
+#'
 make_pipeline <- function(...) {
     stages <- list(...) %>%
         with_names() %>%
-        with_deps()
+        with_deps() %>%
+        topsort() %>%
+        with_stage_names()
 
-    list(stages = stages, exec_order = topsort(stages))
+    list(stages = stages)
 }

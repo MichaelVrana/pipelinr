@@ -53,4 +53,4 @@ pipeline <- make_pipeline(
     )
 )
 
-outputs <- run_pipeline(pipeline, print_inputs = TRUE)
+outputs <- make(pipeline = pipeline, print_inputs = TRUE)

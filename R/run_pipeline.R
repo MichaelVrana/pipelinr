@@ -112,20 +112,25 @@ load_pipeline <- function() {
         eval(., envir = new.env())
 }
 
-find_stages_to_exec <- function(exec_order, from, only) {
-    from_filter_stages <- if (!is.null(only)) {
-        map(from, function(stage_name) find_child_stages(exec_order, stage_name))
-    } else {
-        exec_order
-    }
+eval_make_filter <- function(stages, filter_quo) {
+    result <- eval_tidy(filter_quo, data = stages)
 
-    only_filter_stages <- if (!is.null(only)) {
-        toString(only)
-    } else {
-        exec_order
-    }
+    if (quo_get_expr(filter_quo) %>% is.symbol()) list(result) else result
+}
 
-    c(from_filter_stages, only_filter_stages) %>% intersect(exec_order, .)
+filter_stages_to_exec <- function(stages, from, only) {
+    from_stages <- eval_make_filter(stages, from) %>%
+        map(., function(stage) {
+            find_child_stages(stages, stage$name) %>% c(., stage$name)
+        }) %>%
+        unlist() %>%
+        unname()
+
+    only_stages <- eval_make_filter(stages, only) %>% to_stage_names()
+
+    stage_names_to_keep <- intersect(from_stages, only_stages) %>% unique()
+
+    keep(stages, function(stage) has_element(stage_names_to_keep, stage$name))
 }
 
 #' Runs a pipeline.
@@ -133,7 +138,13 @@ find_stages_to_exec <- function(exec_order, from, only) {
 #' @param executor An executor function, defaults to R executor.
 #' @param print_inputs Boolean, defaults to `FALSE`. If true, stage inputs will be printed to using the `str` function.
 #' @export
-make <- function(pipeline = load_pipeline(), only = NULL, from = NULL, where = NULL, clean = FALSE, executor = r_executor, print_inputs = FALSE) {
+make <- function(only = pipeline$stages,
+                 pipeline = load_pipeline(),
+                 from = pipeline$stages,
+                 where = NULL,
+                 clean = FALSE,
+                 executor = r_executor,
+                 print_inputs = FALSE) {
     create_stage_dirs(pipeline$stages %>% names())
 
     task_filter_factory <- if (!missing(where)) {
@@ -142,13 +153,15 @@ make <- function(pipeline = load_pipeline(), only = NULL, from = NULL, where = N
         unevaluated_task_filter_factory
     }
 
-    stages_to_exec <- find_stages_to_exec(pipeline$exec_order, from, only)
+    stages_to_exec <- filter_stages_to_exec(pipeline$stages, enquo(from), enquo(only))
 
     reduce(stages_to_exec,
         .init = list(
             results = list(),
             metadata = list()
         ), function(stage_results, stage) {
+            # TODO: change this to walk instead of reduce and load results and metadata from stage$deps
+            
             paste("Executing stage ", stage$name, "\n", sep = "") %>% cat()
 
             if (clean) clear_stage_dir(stage$name)
