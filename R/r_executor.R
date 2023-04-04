@@ -3,8 +3,6 @@ library(purrr)
 library(qs)
 
 exec_task <- function(stage, task) {
-    stage_dir <- get_stage_dir(stage$name)
-
     result <- tryCatch(do.call(stage$body, task$args), error = function(e) e)
 
     is_error <- inherits(result, "error")

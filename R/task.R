@@ -57,7 +57,7 @@ stage_task_outputs_iter <- function(stage_name) {
         })
 }
 
-task_results_iter <- function(stage_name) {
+stage_results_iter <- function(stage_name) {
     stage_task_outputs_iter(stage_name) %>%
         filter_iter(., function(task_output) !task_output$failed) %>%
         map_iter(., function(task_output) task_output$result)

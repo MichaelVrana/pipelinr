@@ -113,9 +113,8 @@ load_pipeline <- function() {
 }
 
 eval_make_filter <- function(stages, filter_quo) {
-    result <- eval_tidy(filter_quo, data = stages)
-
-    if (quo_get_expr(filter_quo) %>% is.symbol()) list(result) else result
+    data_mask <- map(stages, list)
+    eval_tidy(filter_quo, data = data_mask)
 }
 
 filter_stages_to_exec <- function(stages, from, only) {
@@ -131,6 +130,18 @@ filter_stages_to_exec <- function(stages, from, only) {
     stage_names_to_keep <- intersect(from_stages, only_stages) %>% unique()
 
     keep(stages, function(stage) has_element(stage_names_to_keep, stage$name))
+}
+
+get_stage_outputs <- function(stage_names) {
+    reduce(
+        stage_names,
+        .init = list(results = list(), metadata = list()),
+        function(stage_outputs, stage_name) {
+            stage_outputs$results[[stage_name]] <- stage_results_iter(stage_name)
+            stage_outputs$metadata[[stage_name]] <- stage_metadata_iter(stage_name)
+            stage_outputs
+        }
+    )
 }
 
 #' Runs a pipeline.
@@ -155,35 +166,32 @@ make <- function(only = pipeline$stages,
 
     stages_to_exec <- filter_stages_to_exec(pipeline$stages, enquo(from), enquo(only))
 
-    reduce(stages_to_exec,
-        .init = list(
-            results = list(),
-            metadata = list()
-        ), function(stage_results, stage) {
-            # TODO: change this to walk instead of reduce and load results and metadata from stage$deps
-            
-            paste("Executing stage ", stage$name, "\n", sep = "") %>% cat()
+    walk(stages_to_exec, function(stage) {
+        paste("Executing stage ", stage$name, "\n", sep = "") %>% cat()
 
-            if (clean) clear_stage_dir(stage$name)
+        stage_outputs <- get_stage_outputs(stage$deps)
 
-            input_iters <- eval_inputs(stage_results, stage$input_quosures)
-            task_iter <- stage_tasks_iter(stage, input_iters) %>% filter_iter(., task_filter_factory(stage$name))
+        if (clean) clear_stage_dir(stage$name)
 
-            if (!task_iter$done) {
-                save_tasks(stage$name, task_iter)
+        input_iters <- eval_inputs(stage_outputs, stage$input_quosures)
+        task_iter <- stage_tasks_iter(stage, input_iters) %>% filter_iter(., task_filter_factory(stage$name))
 
-                if (print_inputs) print_stage_tasks(stage$name, task_iter)
-
-                stage_executor <- if (!is.null(stage$override_executor)) stage$override_executor else executor
-
-                stage_executor(task_iter, stage = stage)
-            } else {
-                paste("No unevaluated tasks found for stage ", stage$name, "\n", sep = "") %>% cat()
-            }
-
-            stage_results$results[[stage$name]] <- task_results_iter(stage$name)
-            stage_results$metadata[[stage$name]] <- stage_metadata_iter(stage$name)
-            stage_results
+        if (task_iter$done) {
+            paste("No unevaluated tasks found for stage ", stage$name, "\n", sep = "") %>% cat()
+            return()
         }
-    )
+
+        save_tasks(stage$name, task_iter)
+
+        if (print_inputs) print_stage_tasks(stage$name, task_iter)
+
+        stage_executor <- if (!is.null(stage$override_executor)) stage$override_executor else executor
+
+        stage_executor(task_iter, stage = stage)
+    })
+
+    get_pipeline_dir() %>%
+        list.dirs() %>%
+        basename() %>%
+        get_stage_outputs()
 }

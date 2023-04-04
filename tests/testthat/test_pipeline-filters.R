@@ -13,7 +13,7 @@ test_that("Pipeline's only filter keeps specified stages", {
         b = stage(inputs = stage_inputs(x = mapped(a)), spy)
     )
 
-    make(pipeline = pipeline, only = b, clean = TRUE)
+    make(pipeline = pipeline, clean = TRUE)
 
     expect_equal(call_count, 3)
 
@@ -24,7 +24,7 @@ test_that("Pipeline's only filter keeps specified stages", {
         b = stage(inputs = stage_inputs(x = mapped(a)), spy)
     )
 
-    make(pipeline = pipeline, only = b)
+    make(pipeline = pipeline, only = b, where = TRUE)
 
     expect_equal(call_count, 3)
 })
