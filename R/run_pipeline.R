@@ -106,7 +106,26 @@ create_stage_dirs <- function(stage_names) {
 }
 
 load_pipeline <- function() {
-    getOption("pipelinr_pipeline_file", "pipeline.R") %>% read_file() %>% parse() %>% eval(., envir = new.env())
+    getOption("pipelinr_pipeline_file", "pipeline.R") %>%
+        read_file() %>%
+        parse() %>%
+        eval(., envir = new.env())
+}
+
+find_stages_to_exec <- function(exec_order, from, only) {
+    from_filter_stages <- if (!is.null(only)) {
+        map(from, function(stage_name) find_child_stages(exec_order, stage_name))
+    } else {
+        exec_order
+    }
+
+    only_filter_stages <- if (!is.null(only)) {
+        toString(only)
+    } else {
+        exec_order
+    }
+
+    c(from_filter_stages, only_filter_stages) %>% intersect(exec_order, .)
 }
 
 #' Runs a pipeline.
@@ -123,11 +142,7 @@ make <- function(pipeline = load_pipeline(), only = NULL, from = NULL, where = N
         unevaluated_task_filter_factory
     }
 
-    stages_to_exec <- if (!missing(only)) {
-        intersect(pipeline$exec_order, toString(only))
-    } else {
-        pipeline$exec_order
-    }
+    stages_to_exec <- find_stages_to_exec(pipeline$exec_order, from, only)
 
     reduce(stages_to_exec,
         .init = list(
