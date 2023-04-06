@@ -107,7 +107,6 @@ create_stage_dirs <- function(stage_names) {
 
 load_pipeline <- function() {
     getOption("pipelinr_pipeline_file", "pipeline.R") %>%
-        read_file() %>%
         parse() %>%
         eval(., envir = new.env())
 }
