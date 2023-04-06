@@ -1,5 +1,6 @@
 library(qs)
 library(magrittr)
+library(rlang)
 
 get_task_filename <- function(task_hash) {
     paste("task_", task_hash, ".qs", sep = "")
@@ -74,4 +75,20 @@ save_tasks <- function(stage_name, task_iter) {
         path <- get_task_path(stage_name, task$hash)
         qsave(task, path)
     })
+}
+
+stage_results_iter_from_symbol <- function(stage_symbol) {
+    if (!is.symbol(stage_symbol)) stop("Invalid stage identifier")
+
+    stage_name <- toString(stage_symbol)
+
+    stage_results_iter(stage_name)
+}
+
+read <- function(stage_symbol) {
+    enexpr(stage_symbol) %>% stage_results_iter_from_symbol() %>% collect()
+}
+
+read_df <- function(stage_symbol) {
+    enexpr(stage_symbol) %>% stage_results_iter_from_symbol() %>% collect_df()
 }
