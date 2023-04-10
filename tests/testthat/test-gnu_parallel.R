@@ -21,7 +21,7 @@ test_that("Metadata function retrieves stage metadata", {
     stdout <- map_iter(results$results$metadata_stage, function(meta) meta$stdout) %>%
         collect()
 
-    expect_equal(stdout, map(1:3, function(x) "[1] \"This will be in stdout\"\n"))
+    expect_equal(stdout, map(1:3, function(x) '[1] "This will be in stdout"'))
 })
 
 test_that("It correctly serializes function with it's globals", {

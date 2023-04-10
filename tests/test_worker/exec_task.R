@@ -14,11 +14,37 @@ exec_task <- function() {
 
     attach(body$env)
 
-    result <- do.call(body$fun, task$args)
+    stdout <- character()
+    stderr <- character()
+
+    out_con <- textConnection("stdout", "w", local = TRUE)
+    err_con <- textConnection("stderr", "w", local = TRUE)
+
+    capture.output(
+        capture.output(
+            result <- tryCatch(
+                do.call(body$fun, task$args),
+                error = function(e) e
+            ),
+            file = out_con,
+            type = "output"
+        ),
+        file = err_con,
+        type = "message"
+    )
+
+    close(out_con)
+    close(err_con)
+
+    is_error <- inherits(result, "error")
+
+    task_result <- if (is_error) list(error = result, failed = TRUE) else list(result = result, failed = FALSE)
+
+    task_result_with_output_streams <- c(task_result, stdout = list(stdout), stderr = list(stderr))
 
     result_filename <- paste(file_path_sans_ext(task_filename), "_out.qs", sep = "")
 
-    qsave(list(result = result), result_filename)
+    qsave(task_result_with_output_streams, result_filename)
 }
 
 exec_task()
