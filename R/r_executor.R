@@ -3,17 +3,38 @@ library(purrr)
 library(qs)
 
 exec_task <- function(stage, task) {
-    result <- tryCatch(do.call(stage$body, task$args), error = function(e) e)
+    stdout <- character()
+    stderr <- character()
+
+    out_con <- textConnection("stdout", "w", local = TRUE)
+    err_con <- textConnection("stderr", "w", local = TRUE)
+
+    capture.output(
+        capture.output(
+            result <- tryCatch(
+                do.call(stage$body, task$args),
+                error = function(e) e
+            ),
+            file = out_con,
+            type = "output"
+        ),
+        file = err_con,
+        type = "message"
+    )
+
+    close(out_con)
+    close(err_con)
 
     is_error <- inherits(result, "error")
 
     if (is_error) print(result)
 
     task_result <- if (is_error) list(error = result, failed = TRUE) else list(result = result, failed = FALSE)
+    task_result_with_output_streams <- c(task_result, stdout = list(stdout), stderr = list(stderr))
 
     task_output_path <- get_task_output_path(stage$name, task$hash)
 
-    qsave(task_result, task_output_path)
+    qsave(task_result_with_output_streams, task_output_path)
 }
 
 #' R task executor. This is the default executor that runs tasks in the main R process.
