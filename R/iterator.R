@@ -175,32 +175,41 @@ is_iter <- function(iter_like) is_list(iter_like) && is_function(iter_like$next_
 #'     list(3, "b"),
 #' )
 #' 
-cross_iter <- function(iter1, iter2) cross2(collect(iter1), collect(iter2)) %>% vec_to_iter()
+cross_iter <- function(...) {
+    original_iters <- list(...)
 
-# cross_iter <- function(...) {
-#     original_iters <- list(...)
+    if (some(original_iters, function(iter) iter$done)) return(make_empty_iter())
 
-#     cross <- function(iters) {
-#         if (all(iters, function(iter) iter$done)) return(make_empty_iter())
+    cross <- function(iters) {
+        if (every(iters, function(iter) iter$done)) return(make_empty_iter())
+        
+        undone_iters <- imap(iters, function(iter, idx) {
+            if (!iter$done) iter
+            else original_iters[[idx]]
+        })
 
-#         next_iter <- function() {
-#             iterate <- TRUE
+        next_iter <- function() {
+            should_flip <- TRUE
 
-#             imap(iters, function(iter, idx) {
-#                 if (!iterate) return(iter)
+            next_iters <- map(undone_iters, function(iter) {
+                if (!should_flip) return(iter)
 
-#                 new_iter <- iter$next_iter()
+                next_iter <- iter$next_iter()
 
-#                 if (iter$done) return(original_iters[[idx]])
+                if (next_iter$done) return(next_iter)
 
-#                 iterate <- FALSE
-#                 iter <-
-#             }) %>% cross()
-#         }
+                should_flip <<- FALSE
+                next_iter
+            })
 
-#         list(value = map(iters, function(iter) iter$value, done = false, next_iter = next_iter))
-#     }
-# }
+            cross(next_iters)
+        }
+
+        make_iter(value = map(undone_iters, function(iter) iter$value), next_iter = next_iter)
+    }
+
+    cross(original_iters)
+}
 
 #' Zips iterators together into a single iterator
 #' @export
@@ -306,7 +315,7 @@ concat_iter <- function(...) {
     }
 
     curr_iter <- iters[[1]]
-    iters_tail <- tail(iters, n = 1)
+    iters_tail <- tail(iters, n = -1)
 
     if (iters[[1]]$done) {
         return(do.call(concat_iter, iters_tail))
