@@ -18,11 +18,9 @@ test_that("Pipeline evaluates crossed inputs", {
         )
     )
 
-    results <- make(pipeline = pipeline)
+    make(pipeline = pipeline)
 
-    stage_results <- make(pipeline = pipeline)
-    
-    actual <- collect(stage_results$results$crossed)
+    actual <- read(crossed)
 
     expect_snapshot(actual)
 })

@@ -30,7 +30,7 @@ vec_to_iter <- function(vec) {
 
     make_iter(
         value = vec[[1]],
-        next_iter = function() tail(vec, -1) %>% vec_to_iter()
+        next_iter = function() tail(vec, n = -1) %>% vec_to_iter()
     )
 }
 
@@ -61,16 +61,14 @@ df_to_iter <- function(df) {
 #' sum == 1 + 2 + 3 + 4 + 5
 #' 
 fold_iter <- function(iter, init, fun) {
-    fold <- function(iter, acc) {
-        if (iter$done) {
-            return(acc)
-        }
+    acc <- init
 
-        next_acc <- fun(acc, iter$value)
-        fold(iter$next_iter(), next_acc)
+    while (!iter$done) {
+        acc <- fun(acc, iter$value)
+        iter <- iter$next_iter()
     }
 
-    fold(iter, init)
+    acc
 }
 
 #' Collect an iterator to a list of values
@@ -136,12 +134,10 @@ map_iter <- function(iter, fun) {
 #' collected == list(2, 4)
 #' 
 filter_iter <- function(iter, predicate) {
+    while (!iter$done && !predicate(iter$value)) iter <- iter$next_iter()
+
     if (iter$done) {
         return(make_empty_iter())
-    }
-
-    if (!predicate(iter$value)) {
-        return(filter_iter(iter$next_iter(), predicate))
     }
 
     make_iter(
@@ -335,9 +331,10 @@ concat_iter <- function(...) {
 }
 
 for_each_iter <- function(iter, fun) {
-    if (iter$done) return(NULL)
-    fun(iter$value)
-    for_each_iter(iter$next_iter(), fun)
+    fold_iter(iter, NULL, function(acc, value) {
+        fun(value)
+        NULL
+    })
 }
 
 iter_length <- function(iter) {
