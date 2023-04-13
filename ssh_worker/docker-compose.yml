@@ -2,6 +2,5 @@ services:
   ssh-worker:
     build: 
       context: .
-      dockerfile: ssh-worker.Dockerfile
     deploy:
       replicas: 4
