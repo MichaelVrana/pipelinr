@@ -1,6 +1,8 @@
 #!/bin/sh
 
-task_filename="$1"
+exec_task_path="$1"
+collect_metadata_path="$2"
+task_filename="$3"
 
-Rscript exec_task.R "$task_filename"
-Rscript collect_metadata.R "$task_filename" "$?"
+Rscript "$exec_task_path" "$task_filename"
+Rscript "$collect_metadata_path" "$task_filename" "$?"

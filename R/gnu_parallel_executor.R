@@ -21,7 +21,7 @@ get_basefile_args <- function() {
 #' Constructor function of a GNU Parallel task executor. This executor runs tasks in parallel using GNU Parallel.
 #' @param ssh_login_file Path to GNU Parallel SSH login file. If the file is specified, tasks will be executed over SSH.
 #' @export
-make_gnu_parallel_executor <- function(ssh_login_file = "") {
+make_gnu_parallel_executor <- function(ssh_login_file = "", flags = character()) {
     function(task_iter, stage) {
         body_with_globals <- find_used_globals_and_packages(stage$body)
 
@@ -45,19 +45,39 @@ make_gnu_parallel_executor <- function(ssh_login_file = "") {
 
         setwd(stage_dir)
 
-        args <- c(
-            "--sshloginfile",
-            ssh_login_file_normalized_path,
-            get_basefile_args(),
-            "--trc",
-            "{.}_out.qs",
-            "./exec_task_and_collect_metadata.sh",
-            ":::",
-            task_filenames
+        tryCatch(
+            {
+                parallel_args <- if (ssh_login_file != "") {
+                    c(
+                        "--sshloginfile",
+                        ssh_login_file_normalized_path,
+                        get_basefile_args(),
+                        "--trc",
+                        "{.}_out.qs",
+                        flags,
+                        "./exec_task_and_collect_metadata.sh",
+                        "./exec_task.R",
+                        "./collect_metadata.R",
+                        ":::",
+                        task_filenames
+                    )
+                } else {
+                    c(
+                        flags,
+                        system.file(
+                            "./exec_task_and_collect_metadata.sh",
+                            package = "pipelinr"
+                        ),
+                        system.file("exec_task.R", package = "pipelinr"),
+                        system.file("collect_metadata.R", package = "pipelinr"),
+                        ":::",
+                        task_filenames
+                    )
+                }
+
+                system2("parallel", args = parallel_args)
+            },
+            finally = setwd(curr_wd)
         )
-
-        system2("parallel", args = args)
-
-        setwd(curr_wd)
     }
 }
