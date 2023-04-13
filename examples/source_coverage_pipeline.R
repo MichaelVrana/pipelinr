@@ -19,8 +19,8 @@ source_coverage <- function(package, package_source) {
     )
 }
 
-Sys.setenv(PARALLEL_SSH = paste("ssh -F ", file.path(getwd(), "tests", "test_worker", "ssh.config"), sep = ""))
-executor <- file.path(getwd(), "tests", "test_worker", "nodefile") |> make_gnu_parallel_executor()
+Sys.setenv(PARALLEL_SSH = paste("ssh -F ", file.path(getwd(), "ssh_worker", "ssh.config"), sep = ""))
+executor <- file.path(getwd(), "ssh_worker", "nodefile") |> make_gnu_parallel_executor()
 
 pipeline <- make_pipeline(
     packages = stage(function() c("p1", "p2")),
@@ -53,4 +53,4 @@ pipeline <- make_pipeline(
     )
 )
 
-outputs <- make(pipeline = pipeline, print_inputs = TRUE)
+outputs <- make(pipeline = pipeline, print_inputs = TRUE, clean = TRUE)

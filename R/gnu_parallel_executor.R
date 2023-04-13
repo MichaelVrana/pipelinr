@@ -2,6 +2,22 @@ library(rlang)
 library(purrr)
 library(qs)
 
+get_basefile_args <- function() {
+    script_paths <- c("exec_task.R", "collect_metadata.R", "exec_task_and_collect_metadata.sh") %>%
+        system.file(., package = "pipelinr") %>%
+        map(., function(path) {
+            dir <- dirname(path)
+            name <- basename(path)
+
+            file.path(dir, ".", name)
+        })
+
+    c(script_paths, "body.qs") %>%
+        reduce(., .init = character(), function(acc, script_path) {
+            c(acc, "--basefile", script_path)
+        })
+}
+
 #' Constructor function of a GNU Parallel task executor. This executor runs tasks in parallel using GNU Parallel.
 #' @param ssh_login_file Path to GNU Parallel SSH login file. If the file is specified, tasks will be executed over SSH.
 #' @export
@@ -32,12 +48,9 @@ make_gnu_parallel_executor <- function(ssh_login_file = "") {
         args <- c(
             "--sshloginfile",
             ssh_login_file_normalized_path,
-            "--transfer",
-            "--return",
+            get_basefile_args(),
+            "--trc",
             "{.}_out.qs",
-            "--cleanup",
-            "--basefile",
-            "body.qs",
             "./exec_task_and_collect_metadata.sh",
             ":::",
             task_filenames
