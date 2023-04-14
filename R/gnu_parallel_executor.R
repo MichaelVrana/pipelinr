@@ -76,6 +76,10 @@ make_gnu_parallel_executor <- function(ssh_login_file = "", flags = character())
             )
         }
 
+        job_log_path <- file.path(stage_dir, parallel_job_log_filename)
+
+        if (file.exists(job_log_path)) file.remove(job_log_path)
+
         proc <- process$new(
             command = "parallel",
             args = parallel_args,
@@ -91,10 +95,12 @@ make_gnu_parallel_executor <- function(ssh_login_file = "", flags = character())
         while (proc$is_alive()) {
             proc$wait(1000)
 
-            tasks_completed <- file.path(stage_dir, parallel_job_log_filename) %>%
-                read_file() %>%
-                str_count(., "\n") - 1
-
+            tasks_completed <- if (file.exists(job_log_path)) {
+                read_file(job_log_path) %>%
+                    str_count(., "\n") - 1
+            } else {
+                0
+            }
 
             if (!pb$finished && tasks_completed != 0) {
                 pb$update(task_count / tasks_completed)
