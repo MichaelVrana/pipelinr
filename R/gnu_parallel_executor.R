@@ -39,44 +39,39 @@ make_gnu_parallel_executor <- function(ssh_login_file = "", flags = character())
             c(acc, get_task_filename(task$hash))
         })
 
-        ssh_login_file_normalized_path <- normalizePath(ssh_login_file)
+        parallel_args <- if (ssh_login_file != "") {
+            c(
+                "--sshloginfile",
+                normalizePath(ssh_login_file),
+                get_basefile_args(),
+                "--trc",
+                "{.}_out.qs",
+                flags,
+                "./exec_task_and_collect_metadata.sh",
+                "./exec_task.R",
+                "./collect_metadata.R",
+                ":::",
+                task_filenames
+            )
+        } else {
+            c(
+                flags,
+                system.file(
+                    "./exec_task_and_collect_metadata.sh",
+                    package = "pipelinr"
+                ),
+                system.file("exec_task.R", package = "pipelinr"),
+                system.file("collect_metadata.R", package = "pipelinr"),
+                ":::",
+                task_filenames
+            )
+        }
 
         curr_wd <- getwd()
-
         setwd(stage_dir)
-
+        # TODO: --joblog
         tryCatch(
-            {
-                parallel_args <- if (ssh_login_file != "") {
-                    c(
-                        "--sshloginfile",
-                        ssh_login_file_normalized_path,
-                        get_basefile_args(),
-                        "--trc",
-                        "{.}_out.qs",
-                        flags,
-                        "./exec_task_and_collect_metadata.sh",
-                        "./exec_task.R",
-                        "./collect_metadata.R",
-                        ":::",
-                        task_filenames
-                    )
-                } else {
-                    c(
-                        flags,
-                        system.file(
-                            "./exec_task_and_collect_metadata.sh",
-                            package = "pipelinr"
-                        ),
-                        system.file("exec_task.R", package = "pipelinr"),
-                        system.file("collect_metadata.R", package = "pipelinr"),
-                        ":::",
-                        task_filenames
-                    )
-                }
-
-                system2("parallel", args = parallel_args)
-            },
+            system2("parallel", args = parallel_args),
             finally = setwd(curr_wd)
         )
     }
