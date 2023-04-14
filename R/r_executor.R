@@ -1,6 +1,7 @@
 library(rlang)
 library(purrr)
 library(qs)
+library(lubridate)
 
 exec_task <- function(stage, task) {
     stdout <- character()
@@ -11,10 +12,16 @@ exec_task <- function(stage, task) {
 
     capture.output(
         capture.output(
-            result <- tryCatch(
-                do.call(stage$body, task$args),
-                error = function(e) e
-            ),
+            {
+                started_at <- now()
+
+                result <- tryCatch(
+                    do.call(stage$body, task$args),
+                    error = function(e) e
+                )
+
+                finished_at <- now()
+            },
             file = out_con,
             type = "output"
         ),
@@ -30,11 +37,20 @@ exec_task <- function(stage, task) {
     if (is_error) print(result)
 
     task_result <- if (is_error) list(error = result, failed = TRUE) else list(result = result, failed = FALSE)
-    task_result_with_output_streams <- c(task_result, stdout = list(stdout), stderr = list(stderr))
+
+    duration <- interval(started_at, finished_at) |> as.interval()
+
+    task_result_with_metadata <- c(
+        task_result,
+        stdout = list(stdout),
+        stderr = list(stderr),
+        started_at = started_at,
+        duration = duration
+    )
 
     task_output_path <- get_task_output_path(stage$name, task$hash)
 
-    qsave(task_result_with_output_streams, task_output_path)
+    qsave(task_result_with_metadata, task_output_path)
 }
 
 #' R task executor. This is the default executor that runs tasks in the main R process.

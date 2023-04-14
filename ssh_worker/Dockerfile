@@ -6,13 +6,15 @@ RUN adduser worker -h /home/worker -D && \
     echo -n worker:$(tr -dc A-Za-z0-9 < /dev/urandom | head -c 30) | chpasswd && \
     apk add openssh rsync R R-dev build-base linux-headers perl && \
     ssh-keygen -A && \
-    Rscript -e 'install.packages("qs", repos="https://cran.rstudio.com")'
+    Rscript -e 'install.packages(c("qs", "lubridate"), repos="https://cran.rstudio.com")'
 
 WORKDIR /home/worker
 
 ARG PUB_KEY=./id_rsa.pub
 
 COPY ${PUB_KEY} .ssh/authorized_keys
+
+ENV TZ Etc/UTC
 
 EXPOSE 22
 

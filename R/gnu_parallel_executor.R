@@ -56,9 +56,7 @@ make_gnu_parallel_executor <- function(ssh_login_file = "", flags = character())
                 "{.}_out.qs",
                 "./exec_task_and_collect_metadata.sh",
                 "./exec_task.R",
-                "./collect_metadata.R",
-                ":::",
-                task_filenames
+                "./collect_metadata.R"
             )
         } else {
             c(
@@ -70,9 +68,7 @@ make_gnu_parallel_executor <- function(ssh_login_file = "", flags = character())
                     package = "pipelinr"
                 ),
                 system.file("exec_task.R", package = "pipelinr"),
-                system.file("collect_metadata.R", package = "pipelinr"),
-                ":::",
-                task_filenames
+                system.file("collect_metadata.R", package = "pipelinr")
             )
         }
 
@@ -85,8 +81,13 @@ make_gnu_parallel_executor <- function(ssh_login_file = "", flags = character())
             args = parallel_args,
             wd = stage_dir,
             stdout = "",
-            stderr = ""
+            stderr = "",
+            stdin = "|"
         )
+
+        proc_stdin <- proc$get_input_connection()
+        conn_write(proc_stdin, task_filenames)
+        close(proc_stdin)
 
         task_count <- length(task_filenames)
 

@@ -1,5 +1,6 @@
 library(tools)
 suppressPackageStartupMessages(library(qs))
+suppressPackageStartupMessages(library(lubridate))
 
 # the script is wrapped in a function to make the variables local as to not interfere with the tasks globals
 exec_task <- function() {
@@ -22,10 +23,16 @@ exec_task <- function() {
 
     capture.output(
         capture.output(
-            result <- tryCatch(
-                do.call(body$fun, task$args),
-                error = function(e) e
-            ),
+            {
+                started_at <- now()
+
+                result <- tryCatch(
+                    do.call(body$fun, task$args),
+                    error = function(e) e
+                )
+
+                finished_at <- now()
+            },
             file = out_con,
             type = "output"
         ),
@@ -40,11 +47,19 @@ exec_task <- function() {
 
     task_result <- if (is_error) list(error = result, failed = TRUE) else list(result = result, failed = FALSE)
 
-    task_result_with_output_streams <- c(task_result, stdout = list(stdout), stderr = list(stderr))
+    duration <- interval(started_at, finished_at) |> as.duration()
+
+    task_result_with_metadata <- c(
+        task_result,
+        stdout = list(stdout),
+        stderr = list(stderr),
+        started_at = started_at,
+        duration = duration
+    )
 
     result_filename <- paste(file_path_sans_ext(task_filename), "_out.qs", sep = "")
 
-    qsave(task_result_with_output_streams, result_filename)
+    qsave(task_result_with_metadata, result_filename)
 }
 
 exec_task()
