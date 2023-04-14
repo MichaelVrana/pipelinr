@@ -5,3 +5,4 @@ tests/resources/pipeline*
 man/
 total_city_population.png
 *.qs
+joblog

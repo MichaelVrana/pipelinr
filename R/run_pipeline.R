@@ -166,8 +166,6 @@ make <- function(only = pipeline$stages,
     stages_to_exec <- filter_stages_to_exec(pipeline$stages, enquo(from), enquo(only))
 
     walk(stages_to_exec, function(stage) {
-        paste("Executing stage ", stage$name, "\n", sep = "") %>% cat()
-
         stage_outputs <- get_stage_outputs(stage$deps)
 
         if (clean) clear_stage_dir(stage$name)

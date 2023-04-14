@@ -1,6 +1,11 @@
 library(rlang)
 library(purrr)
 library(qs)
+library(processx)
+library(readr)
+library(stringr)
+
+parallel_job_log_filename <- "joblog"
 
 get_basefile_args <- function() {
     script_paths <- c("exec_task.R", "collect_metadata.R", "exec_task_and_collect_metadata.sh") %>%
@@ -41,12 +46,14 @@ make_gnu_parallel_executor <- function(ssh_login_file = "", flags = character())
 
         parallel_args <- if (ssh_login_file != "") {
             c(
+                flags,
+                "--joblog",
+                parallel_job_log_filename,
                 "--sshloginfile",
                 normalizePath(ssh_login_file),
                 get_basefile_args(),
                 "--trc",
                 "{.}_out.qs",
-                flags,
                 "./exec_task_and_collect_metadata.sh",
                 "./exec_task.R",
                 "./collect_metadata.R",
@@ -56,6 +63,8 @@ make_gnu_parallel_executor <- function(ssh_login_file = "", flags = character())
         } else {
             c(
                 flags,
+                "--joblog",
+                parallel_job_log_filename,
                 system.file(
                     "./exec_task_and_collect_metadata.sh",
                     package = "pipelinr"
@@ -67,12 +76,31 @@ make_gnu_parallel_executor <- function(ssh_login_file = "", flags = character())
             )
         }
 
-        curr_wd <- getwd()
-        setwd(stage_dir)
-        # TODO: --joblog
-        tryCatch(
-            system2("parallel", args = parallel_args),
-            finally = setwd(curr_wd)
+        proc <- process$new(
+            command = "parallel",
+            args = parallel_args,
+            wd = stage_dir,
+            stdout = "",
+            stderr = ""
         )
+
+        task_count <- length(task_filenames)
+
+        pb <- create_task_execution_progress_bar(stage$name, task_count)
+
+        while (proc$is_alive()) {
+            proc$wait(1000)
+
+            tasks_completed <- file.path(stage_dir, parallel_job_log_filename) %>%
+                read_file() %>%
+                str_count(., "\n") - 1
+
+
+            if (!pb$finished && tasks_completed != 0) {
+                pb$update(task_count / tasks_completed)
+            }
+        }
+
+        pb$terminate()
     }
 }
