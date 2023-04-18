@@ -34,8 +34,6 @@ exec_task <- function(stage, task) {
 
     is_error <- inherits(result, "error")
 
-    if (is_error) print(result)
-
     task_result <- if (is_error) list(error = result, failed = TRUE) else list(result = result, failed = FALSE)
 
     duration <- interval(started_at, finished_at) |> as.interval()

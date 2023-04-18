@@ -19,7 +19,7 @@ find_symbols <- function(expr) {
         return(list(as_string(expr)))
     }
 
-    map(as.list(expr), find_symbols) %>% flatten()
+    map(as.list(expr), find_symbols) %>% purrr::flatten()
 }
 
 without_name <- function(list, name) list[grep(name, names(list), invert = TRUE)]

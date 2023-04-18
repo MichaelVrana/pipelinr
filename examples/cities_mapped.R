@@ -1,11 +1,11 @@
-library(devtools)
+# library(devtools)
 library(httr)
 library(jsonlite)
 library(dplyr)
 library(purrr)
 library(ggplot2)
 
-devtools::load_all()
+# devtools::load_all()
 
 cities_by_country_url <- "https://countriesnow.space/api/v0.1/countries/cities"
 
@@ -16,7 +16,6 @@ get_cities <- function(country) {
         content() %>%
         pluck("data") %>%
         unlist() %>%
-        head(., n = 10) %>%
         data.frame(name = ., country = country)
 }
 
@@ -28,9 +27,15 @@ get_city_population <- function(city) {
     population_counts <- POST(city_population_url, add_headers("Content-Type" = "application/json"), body = body) %>%
         content()
 
-    population_counts %>%
+    population <- population_counts %>%
         pluck("data", "populationCounts", 1, "value") %>%
         as.numeric()
+
+    if (is_empty(population)) {
+        paste("Failed to retrieve population for city", city$name) %>% stop()
+    }
+
+    population
 }
 
 pipeline <- make_pipeline(
@@ -42,12 +47,29 @@ pipeline <- make_pipeline(
         rbind(nigerian_cities, ethiopian_cities)
     }),
     #
-    city_populations = stage(function(cities) {
-        cities$population <- map(cities$name, get_city_population) %>% unlist()
-        cities
-    }),
+    city_populations = stage(
+        inputs = stage_inputs(
+            city = mapped(cities)
+        ),
+        function(city) {
+            city$population <- get_city_population(city$name)
+            city
+        }
+    ),
     #
-    plot_city_population_by_country = stage(function(city_populations) {
+    total_city_population = stage(
+        inputs = stage_inputs(
+            city_populations = collect_df(city_populations)
+        ),
+        function(city_populations) {
+            cities$population <- city_populations
+            cities %>%
+                group_by(country) %>%
+                summarize(total_population = sum(population))
+        }
+    ),
+    #
+    plot_city_population_by_country = stage(function(total_city_population) {
         total_city_population <- city_populations %>%
             group_by(country) %>%
             summarize(total_population = sum(population))

@@ -21,12 +21,11 @@ find_unbound_body_args <- function(stage) {
 
 find_deps <- function(input_quo, other_stage_names) {
     inputs_expr <- quo_get_expr(input_quo)
-    inputs_env <- quo_get_env(input_quo)
 
     symbols <- find_symbols(inputs_expr)
 
     keep(symbols, function(symbol) {
-        !env_has(inputs_env, symbol) && has_element(other_stage_names, symbol)
+        has_element(other_stage_names, symbol)
     })
 }
 
@@ -41,7 +40,7 @@ with_deps <- function(stages) {
         other_stage_names <- setdiff(stage_names, stage$name)
 
         deps <- map(stage$input_quosures, function(input_quo) find_deps(input_quo, other_stage_names)) %>%
-            flatten() %>%
+            purrr::flatten() %>%
             unlist()
 
         unbound_args <- find_unbound_body_args(stage)
