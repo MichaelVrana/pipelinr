@@ -15,7 +15,7 @@ test_that("Pipeline's only filter keeps specified stages", {
         b = stage(inputs = stage_inputs(x = mapped(a)), body = function(x) x)
     )
 
-    make(pipeline = pipeline, only = b, where = TRUE)
+    make(pipeline = pipeline, only = b, filter = TRUE)
 
     expect_equal(read(b) %>% length(), 3)
 })

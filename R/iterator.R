@@ -49,6 +49,11 @@ df_to_iter <- function(df) {
     )
 }
 
+as_iter <- function(obj) {
+    if (is.data.frame(obj)) df_to_iter(obj)
+    else vec_to_iter(obj)
+}
+
 #' Fold an iterator to a single value using a function
 #' @param iter An iterator to fold
 #' @param init Initial value of the accumulator

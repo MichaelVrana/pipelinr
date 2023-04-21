@@ -11,15 +11,17 @@ create_metadata_function <- function(metadata_iters) {
 }
 
 eval_inputs <- function(stage_results, input_quosures) {
-    dsl_funcs <- list(metadata = create_metadata_function(stage_results$metadata))
+    dsl_funcs <- list(
+        metadata = create_metadata_function(stage_results$metadata),
+        take = head_iter,
+        filtered = filter_iter,
+        crossed = cross_iter,
+        chained = concat_iter,
+        zipped = zip_iter
+    )
 
     map(input_quosures, function(input_quo) {
-        inputs_expr <- quo_get_expr(input_quo)
-        inputs_env <- quo_get_env(input_quo)
-
-        eval_env <- new_environment(data = c(stage_results$results, dsl_funcs), parent = inputs_env)
-
-        input <- eval(inputs_expr, envir = eval_env)
+        input <- eval_tidy(input_quo, data = c(stage_results$results, dsl_funcs))
 
         if (is_iter(input)) {
             return(input)
@@ -111,20 +113,17 @@ load_pipeline <- function() {
         eval(., envir = new.env())
 }
 
-eval_make_filter <- function(stages, filter_quo) {
-    data_mask <- map(stages, list)
-    eval_tidy(filter_quo, data = data_mask)
-}
-
 filter_stages_to_exec <- function(stages, from, only) {
-    from_stages <- eval_make_filter(stages, from) %>%
-        map(., function(stage) {
-            find_child_stages(stages, stage$name) %>% c(., stage$name)
+    stage_names <- map_chr(stages, function(stage) stage$name)
+
+    from_stages <- eval_tidy(from, stage_names) %>%
+        map(., function(stage_name) {
+            find_child_stages(stages, stage_name) %>% c(., stage_name)
         }) %>%
-        unlist() %>%
+        as.character() %>%
         unname()
 
-    only_stages <- eval_make_filter(stages, only) %>% to_stage_names()
+    only_stages <- eval_tidy(only, stage_names) %>% as.character()
 
     stage_names_to_keep <- intersect(from_stages, only_stages) %>% unique()
 
@@ -143,22 +142,22 @@ get_stage_outputs <- function(stage_names) {
     )
 }
 
-#' Runs a pipeline.
+#' Executes a pipeline.
 #' @param pipeline A pipeline object constructed using `make_pipeline`.
 #' @param executor An executor function, defaults to R executor.
 #' @param print_inputs Boolean, defaults to `FALSE`. If true, stage inputs will be printed to using the `str` function.
 #' @export
-make <- function(only = pipeline$stages,
+make <- function(only = names(pipeline$stages),
                  pipeline = load_pipeline(),
-                 from = pipeline$stages,
-                 where = NULL,
+                 from = names(pipeline$stages),
+                 filter = NULL,
                  clean = FALSE,
                  executor = r_executor,
                  print_inputs = FALSE) {
     create_stage_dirs(pipeline$stages %>% names())
 
-    task_filter_factory <- if (!missing(where)) {
-        enquo(where) %>% create_metadata_task_filter_factory()
+    task_filter_factory <- if (!missing(filter)) {
+        enquo(filter) %>% create_metadata_task_filter_factory()
     } else {
         unevaluated_task_filter_factory
     }
