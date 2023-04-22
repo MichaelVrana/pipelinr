@@ -2,6 +2,14 @@ library(tools)
 suppressPackageStartupMessages(library(qs))
 suppressPackageStartupMessages(library(lubridate))
 
+process_captured_output <- function(output) {
+    if (length(output) == 0) {
+        return("")
+    }
+
+    paste(output, collapse = "\n")
+}
+
 # the script is wrapped in a function to make the variables local as to not interfere with the tasks globals
 exec_task <- function() {
     args <- commandArgs(trailingOnly = TRUE)
@@ -42,6 +50,9 @@ exec_task <- function() {
 
     close(out_con)
     close(err_con)
+
+    stdout <- process_captured_output(stdout)
+    stderr <- process_captured_output(stderr)
 
     is_error <- inherits(result, "error")
 

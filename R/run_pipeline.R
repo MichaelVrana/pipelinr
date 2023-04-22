@@ -117,11 +117,11 @@ filter_stages_to_exec <- function(stages, from, only) {
     stage_names <- map_chr(stages, function(stage) stage$name)
 
     from_stages <- eval_tidy(from, stage_names) %>%
+        as.character() %>%
         map(., function(stage_name) {
             find_child_stages(stages, stage_name) %>% c(., stage_name)
         }) %>%
-        as.character() %>%
-        unname()
+        flatten_chr()
 
     only_stages <- eval_tidy(only, stage_names) %>% as.character()
 
@@ -181,7 +181,7 @@ make <- function(only = names(pipeline$stages),
 
         if (print_inputs) print_stage_tasks(stage$name, task_iter)
 
-        stage_executor <- if (!is.null(stage$override_executor)) stage$override_executor else executor
+        stage_executor <- if (!is.null(stage$executor)) stage$executor else executor
 
         stage_executor(task_iter, stage = stage)
     })

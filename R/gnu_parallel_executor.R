@@ -104,7 +104,7 @@ make_gnu_parallel_executor <- function(ssh_login_file = "", flags = character())
             }
 
             if (!pb$finished && tasks_completed != 0) {
-                pb$update(task_count / tasks_completed)
+                pb$update(tasks_completed / task_count)
             }
         }
 

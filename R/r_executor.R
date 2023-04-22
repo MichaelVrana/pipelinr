@@ -3,6 +3,14 @@ library(purrr)
 library(qs)
 library(lubridate)
 
+process_captured_output <- function(output) {
+    if (length(output) == 0) {
+        return("")
+    }
+
+    paste(output, collapse = "\n")
+}
+
 exec_task <- function(stage, task) {
     stdout <- character()
     stderr <- character()
@@ -32,6 +40,9 @@ exec_task <- function(stage, task) {
     close(out_con)
     close(err_con)
 
+    stdout <- process_captured_output(stdout)
+    stderr <- process_captured_output(stderr)
+
     is_error <- inherits(result, "error")
 
     task_result <- if (is_error) list(error = result, failed = TRUE) else list(result = result, failed = FALSE)
@@ -57,10 +68,12 @@ r_executor <- function(task_iter, stage) {
     memoized_task_iter <- memoize_iter(task_iter)
     task_count <- iter_length(memoized_task_iter)
 
-    bar <- create_task_execution_progress_bar(stage$name, task_count)
+    pb <- create_task_execution_progress_bar(stage$name, task_count)
 
     for_each_iter(memoized_task_iter, function(task) {
         exec_task(stage, task)
-        bar$tick()
+        pb$tick()
     })
+
+    pb$terminate()
 }

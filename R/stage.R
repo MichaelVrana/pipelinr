@@ -16,8 +16,8 @@ stage_inputs <- function(...) enquos(...)
 #' @examples
 #' stage(inputs = stage_inputs(a = 1:3 |> mapped()), body = function(a) a * 2)
 #'
-stage <- function(body, inputs = stage_inputs(), save_results = FALSE, override_executor = NULL) {
-    list(body = body, input_quosures = inputs, save_results = save_results, override_executor = override_executor)
+stage <- function(body, inputs = stage_inputs(), save_results = FALSE, executor = NULL) {
+    list(body = body, input_quosures = inputs, save_results = save_results, executor = executor)
 }
 
 clear_stage_dir <- function(stage_name) {

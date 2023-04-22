@@ -9,7 +9,7 @@ test_that("Metadata function retrieves stage metadata", {
             list(number = 2, str = "b"),
             list(number = 3, str = "c")
         )),
-        stage1 = stage(inputs = stage_inputs(x = mapped(data)), override_executor = gnu_parallel_executor, body = function(x) {
+        stage1 = stage(inputs = stage_inputs(x = mapped(data)), executor = gnu_parallel_executor, body = function(x) {
             print("This will be in stdout")
             list(number = x$number * 2, str = x$str)
         }),

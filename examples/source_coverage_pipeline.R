@@ -42,7 +42,7 @@ pipeline <- make_pipeline(
             cov <- source_coverage(package_with_source$package, package_with_source$src)
             data.frame(pkg = package_with_source$package, src = package_with_source$src, coverage = cov)
         },
-        override_executor = executor
+        executor = executor
     ),
     #
     metadata = stage(

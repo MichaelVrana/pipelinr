@@ -104,5 +104,9 @@ metadata <- function(stage_symbol) {
 metadata_df <- function(stage_symbol) {
     enexpr(stage_symbol) %>%
         stage_metadata_iter_from_symbol() %>%
+        map_iter(., function(task_metadata) {
+            task_metadata$result <- list(task_metadata$result)
+            task_metadata
+        }) %>%
         collect_df()
 }
