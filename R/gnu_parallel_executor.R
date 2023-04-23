@@ -7,9 +7,13 @@ library(stringr)
 
 parallel_job_log_filename <- "joblog"
 
+get_script_file_paths <- function() {
+    c("exec_task_and_collect_metadata.sh", "exec_task.R", "collect_metadata.R") %>%
+        system.file(., package = "pipelinr", mustWork = TRUE)
+}
+
 get_basefile_args <- function() {
-    script_paths <- c("exec_task.R", "collect_metadata.R", "exec_task_and_collect_metadata.sh") %>%
-        system.file(., package = "pipelinr") %>%
+    script_paths <- get_script_file_paths() %>%
         map(., function(path) {
             dir <- dirname(path)
             name <- basename(path)
@@ -63,12 +67,7 @@ make_gnu_parallel_executor <- function(ssh_login_file = "", flags = character())
                 flags,
                 "--joblog",
                 parallel_job_log_filename,
-                system.file(
-                    "./exec_task_and_collect_metadata.sh",
-                    package = "pipelinr"
-                ),
-                system.file("exec_task.R", package = "pipelinr"),
-                system.file("collect_metadata.R", package = "pipelinr")
+                get_script_file_paths()
             )
         }
 
