@@ -4,20 +4,14 @@ library(purrr)
 is_ns_access_operator <- function(fun_name) fun_name == "::" || fun_name == ":::"
 
 is_ns_access_call <- function(ast) {
-    is.call(ast) && ast[[1]] %>%
+    is.call(ast) && (ast[[1]] %>%
         toString() %>%
-        is_ns_access_operator()
+        is_ns_access_operator())
 }
 
 find_used_namespaces <- function(ast) {
     if (is_ns_access_call(ast)) {
-        namespace <- ast[[2]] %>% toString()
-
-        if (namespace == "base") {
-            return(character())
-        }
-
-        return(namespace)
+        return(toString(ast[[2]]))
     }
 
     if (is.call(ast) || is.pairlist(ast)) {
