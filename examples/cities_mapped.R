@@ -1,11 +1,11 @@
-# library(devtools)
+library(devtools)
 library(httr)
 library(jsonlite)
 library(dplyr)
 library(purrr)
 library(ggplot2)
 
-# devtools::load_all()
+devtools::load_all()
 
 cities_by_country_url <- "https://countriesnow.space/api/v0.1/countries/cities"
 
@@ -41,10 +41,10 @@ get_city_population <- function(city) {
 pipeline <- make_pipeline(
     nigerian_cities = stage(function() get_cities("nigeria")),
     #
-    ethiopian_cities = stage(function() get_cities("ethiopia")),
+    turkish_cities = stage(function() get_cities("turkey")),
     #
-    cities = stage(function(nigerian_cities, ethiopian_cities) {
-        rbind(nigerian_cities, ethiopian_cities)
+    cities = stage(function(nigerian_cities, turkish_cities) {
+        rbind(nigerian_cities, turkish_cities)
     }),
     #
     city_populations = stage(
@@ -54,26 +54,22 @@ pipeline <- make_pipeline(
         function(city) {
             city$population <- get_city_population(city$name)
             city
-        }
+        },
+        executor = make_gnu_parallel_executor()
     ),
     #
     total_city_population = stage(
         inputs = stage_inputs(
-            city_populations = collect_df(city_populations)
+            cities_with_populations = collect_df(city_populations)
         ),
-        function(city_populations) {
-            cities$population <- city_populations
-            cities %>%
+        function(cities_with_populations) {
+            cities_with_populations %>%
                 group_by(country) %>%
                 summarize(total_population = sum(population))
         }
     ),
     #
     plot_city_population_by_country = stage(function(total_city_population) {
-        total_city_population <- city_populations %>%
-            group_by(country) %>%
-            summarize(total_population = sum(population))
-
         ggplot(total_city_population, aes(x = country, y = total_population)) +
             geom_col() +
             xlab("Country") +

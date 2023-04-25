@@ -36,10 +36,10 @@ get_city_population <- function(city) {
 pipeline <- make_pipeline(
     nigerian_cities = stage(function() get_cities("nigeria")),
     #
-    ethiopian_cities = stage(function() get_cities("ethiopia")),
+    turkish_cities = stage(function() get_cities("turkey")),
     #
-    cities = stage(function(nigerian_cities, ethiopian_cities) {
-        rbind(nigerian_cities, ethiopian_cities)
+    cities = stage(function(nigerian_cities, turkish_cities) {
+        rbind(nigerian_cities, turkish_cities)
     }),
     #
     city_populations = stage(function(cities) {
@@ -62,4 +62,4 @@ pipeline <- make_pipeline(
     })
 )
 
-make(pipeline = pipeline)
+make(pipeline = pipeline, plot_city_population_by_country)

@@ -19,8 +19,6 @@ exec_task <- function() {
     body <- qread("body.qs")
     task <- qread(task_filename)
 
-    for (package in body$packages) library(package, character.only = TRUE)
-
     attach(body$env)
 
     stdout <- character()
@@ -32,6 +30,8 @@ exec_task <- function() {
     capture.output(
         capture.output(
             {
+                for (package in body$packages) library(package, character.only = TRUE)
+
                 started_at <- now()
 
                 result <- tryCatch(
