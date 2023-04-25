@@ -72,12 +72,21 @@ stage_results_iter_from_symbol <- function(stage_symbol) {
     stage_results_iter(stage_name)
 }
 
+#' Retrieve results of a stage
+#' @export
+#' @examples
+#' read(stage_name)
 read <- function(stage_symbol) {
     enexpr(stage_symbol) %>%
         stage_results_iter_from_symbol() %>%
         collect()
 }
 
+#' Retrieve results of a stage as a data frame
+#' This will throw if the results cannot be converted to a data frame
+#' @export
+#' @examples
+#' read(stage_name)
 read_df <- function(stage_symbol) {
     enexpr(stage_symbol) %>%
         stage_results_iter_from_symbol() %>%
@@ -95,12 +104,21 @@ stage_metadata_iter_from_symbol <- function(stage_symbol) {
     stage_metadata_iter(stage_name)
 }
 
+#' Retrieve metadata about stage's execution
+#' @export
+#' @examples
+#' metadata(stage_name)
 metadata <- function(stage_symbol) {
     enexpr(stage_symbol) %>%
         stage_metadata_iter_from_symbol() %>%
         collect()
 }
 
+#' Retrieve metadata about stage's execution as a data frame
+#' This will throw if the results cannot be converted to a data frame
+#' @export
+#' @examples
+#' metadata_df(stage_name)
 metadata_df <- function(stage_symbol) {
     enexpr(stage_symbol) %>%
         stage_metadata_iter_from_symbol() %>%
