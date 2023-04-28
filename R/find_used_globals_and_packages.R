@@ -54,8 +54,8 @@ find_used_globals_and_packages <- function(fun) {
 
         keep(globals, function(global) !has_element(visited_globals, global)) %>%
             map(., function(global_name) {
-                if (!exists(global_name, fun_env)) {
-                    paste("Detected use of undeclared global", global_name) %>% warn()
+                if (!exists(global_name, globalenv())) {
+                    paste("Detected possible use of undeclared global", global_name) %>% warn()
                     return(c(empty_result))
                 }
 

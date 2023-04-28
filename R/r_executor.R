@@ -47,7 +47,7 @@ exec_task <- function(stage, task) {
 
     task_result <- if (is_error) list(error = result, failed = TRUE) else list(result = result, failed = FALSE)
 
-    duration <- interval(started_at, finished_at) |> as.interval()
+    duration <- interval(started_at, finished_at) %>% as.interval()
 
     task_result_with_metadata <- c(
         task_result,
