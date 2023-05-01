@@ -22,7 +22,7 @@ get_basefile_args <- function() {
         })
 
     c(script_paths, "body.qs") %>%
-        reduce(., .init = character(), function(acc, script_path) {
+        purrr::reduce(., .init = character(), function(acc, script_path) {
             c(acc, "--basefile", script_path)
         })
 }

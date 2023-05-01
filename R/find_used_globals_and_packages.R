@@ -55,7 +55,7 @@ find_used_globals_and_packages <- function(fun) {
         purrr::keep(globals, function(global) !purrr::has_element(visited_globals, global)) %>%
             purrr::map(., function(global_name) {
                 if (!exists(global_name, globalenv())) {
-                    paste("Detected possible use of undeclared global", global_name) %>% warn()
+                    paste("Detected possible use of undeclared global", global_name) %>% warning()
                     return(c(empty_result))
                 }
 
@@ -80,7 +80,7 @@ find_used_globals_and_packages <- function(fun) {
                 result$globals[[global_name]] <- value
                 result
             }) %>%
-            reduce(., .init = list(globals = list(), packages = used_packages), merge_lists)
+            purrr::reduce(., .init = list(globals = list(), packages = used_packages), merge_lists)
     }
 
     find_used_globals_and_packages_rec(fun)
