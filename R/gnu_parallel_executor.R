@@ -97,7 +97,7 @@ make_gnu_parallel_executor <- function(ssh_login_file = "", flags = character())
 
             tasks_completed <- if (file.exists(job_log_path)) {
                 readr::read_file(job_log_path) %>%
-                    str_count(., "\n") - 1
+                    stringr::str_count(., "\n") - 1
             } else {
                 0
             }

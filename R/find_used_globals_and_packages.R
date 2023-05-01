@@ -17,7 +17,7 @@ find_used_namespaces <- function(ast) {
     if (is.call(ast) || is.pairlist(ast)) {
         return(
             as.list(ast) %>%
-                map(., find_used_namespaces) %>%
+                purrr::map(., find_used_namespaces) %>%
                 unname() %>%
                 unlist()
         )

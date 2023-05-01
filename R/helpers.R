@@ -16,7 +16,7 @@ find_symbols <- function(expr) {
     }
 
     if (is.symbol(expr)) {
-        return(list(as_string(expr)))
+        return(list(rlang::as_string(expr)))
     }
 
     purrr::map(as.list(expr), find_symbols) %>% purrr::flatten()

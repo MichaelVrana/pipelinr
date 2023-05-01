@@ -54,7 +54,7 @@ with_deps <- function(stages) {
         }
 
         unbound_arg_quos <- purrr::map(unbound_args, function(arg) {
-            as.symbol(arg) %>% rlang::new_quosure(., env = empty_env())
+            as.symbol(arg) %>% rlang::new_quosure(., env = rlang::empty_env())
         }) %>% rlang::new_quosures()
 
         stage$input_quosures <- c(stage$input_quosures, unbound_arg_quos)

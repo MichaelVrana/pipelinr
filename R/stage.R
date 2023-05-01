@@ -28,7 +28,7 @@ clear_stage_dir <- function(stage_name) {
     }
 
     files_to_remove <- list.files(stage_dir) %>%
-        map(., function(filename) file.path(stage_dir, filename)) %>%
+        purrr::map(., function(filename) file.path(stage_dir, filename)) %>%
         unlist()
 
     if (!is_empty(files_to_remove)) file.remove(files_to_remove)
