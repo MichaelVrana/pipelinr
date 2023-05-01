@@ -5,7 +5,7 @@ library(qs)
 
 create_metadata_function <- function(metadata_iters) {
     function(stage_symbol) {
-        stage_name <- ensym(stage_symbol) %>% toString()
+        stage_name <- rlang::ensym(stage_symbol) %>% toString()
         metadata_iters[[stage_name]]
     }
 }
@@ -20,8 +20,8 @@ eval_inputs <- function(stage_results, input_quosures) {
         zipped = zip_iter
     )
 
-    map(input_quosures, function(input_quo) {
-        input <- eval_tidy(input_quo, data = c(stage_results$results, dsl_funcs))
+    purrr::map(input_quosures, function(input_quo) {
+        input <- rlang::eval_tidy(input_quo, data = c(stage_results$results, dsl_funcs))
 
         if (is_iter(input)) {
             return(input)
@@ -55,12 +55,12 @@ create_metadata_task_filter_factory <- function(filter_quo) {
             task_output_path <- get_task_output_path(stage_name, task$hash)
 
             task_output <- if (file.exists(task_output_path)) {
-                qread(task_output_path)
+                qs::qread(task_output_path)
             } else {
                 list()
             }
 
-            result <- eval_tidy(filter_quo, data = c(task, task_output))
+            result <- rlang::eval_tidy(filter_quo, data = c(task, task_output))
 
             is.logical(result) && length(result) == 1 && result
         }
@@ -79,23 +79,23 @@ print_stage_tasks <- function(stage_name, task_iter) {
 }
 
 find_stage_names_to_run <- function(stages) {
-    updated_or_new_stages <- keep(stages, function(stage) {
+    updated_or_new_stages <- purrr::keep(stages, function(stage) {
         stage_hash_path <- file.path(get_stage_dir(stage$name), "stage_hash")
 
         if (!file.exists(stage_hash_path)) {
             return(TRUE)
         }
 
-        prev_hash <- read_file(stage_hash_path)
+        prev_hash <- readr::read_file(stage_hash_path)
         curr_hash <- stage_hash(stage)
 
         curr_hash != prev_hash
     })
 
-    map(updated_or_new_stages, function(stage) {
+    purrr::map(updated_or_new_stages, function(stage) {
         c(find_child_stages(stages, stage$name), stage$name)
     }) %>%
-        flatten_chr() %>%
+        purrr::flatten_chr() %>%
         unique()
 }
 
@@ -114,24 +114,26 @@ load_pipeline <- function() {
 }
 
 filter_stages_to_exec <- function(stages, from, only) {
-    stage_names <- map_chr(stages, function(stage) stage$name)
+    stage_names <- purrr::map_chr(stages, function(stage) stage$name)
 
-    from_stages <- eval_tidy(from, stage_names) %>%
+    from_stages <- rlang::eval_tidy(from, stage_names) %>%
         as.character() %>%
-        map(., function(stage_name) {
+        purrr::map(., function(stage_name) {
             find_child_stages(stages, stage_name) %>% c(., stage_name)
         }) %>%
-        flatten_chr()
+        purrr::flatten_chr()
 
-    only_stages <- eval_tidy(only, stage_names) %>% as.character()
+    only_stages <- rlang::eval_tidy(only, stage_names) %>% as.character()
 
     stage_names_to_keep <- intersect(from_stages, only_stages) %>% unique()
 
-    keep(stages, function(stage) has_element(stage_names_to_keep, stage$name))
+    purrr::keep(stages, function(stage) {
+        purrr::has_element(stage_names_to_keep, stage$name)
+    })
 }
 
 get_stage_outputs <- function(stage_names) {
-    reduce(
+    purrr::reduce(
         stage_names,
         .init = list(results = list(), metadata = list()),
         function(stage_outputs, stage_name) {
@@ -157,14 +159,14 @@ make <- function(only = names(pipeline$stages),
     create_stage_dirs(pipeline$stages %>% names())
 
     task_filter_factory <- if (!missing(filter)) {
-        enquo(filter) %>% create_metadata_task_filter_factory()
+        rlang::enquo(filter) %>% create_metadata_task_filter_factory()
     } else {
         unevaluated_task_filter_factory
     }
 
-    stages_to_exec <- filter_stages_to_exec(pipeline$stages, enquo(from), enquo(only))
+    stages_to_exec <- filter_stages_to_exec(pipeline$stages, rlang::enquo(from), rlang::enquo(only))
 
-    walk(stages_to_exec, function(stage) {
+    purrr::walk(stages_to_exec, function(stage) {
         stage_outputs <- get_stage_outputs(stage$deps)
 
         if (clean) clear_stage_dir(stage$name)

@@ -4,7 +4,7 @@ library(qs)
 library(lubridate)
 
 process_captured_output <- function(output) {
-    if (length(output) == 0) {
+    if (is_empty(output)) {
         return("")
     }
 
@@ -21,14 +21,14 @@ exec_task <- function(stage, task) {
     capture.output(
         capture.output(
             {
-                started_at <- now()
+                started_at <- lubridate::now()
 
                 result <- tryCatch(
                     do.call(stage$body, task$args),
                     error = function(e) e
                 )
 
-                finished_at <- now()
+                finished_at <- lubridate::now()
             },
             file = out_con,
             type = "output"
@@ -47,7 +47,8 @@ exec_task <- function(stage, task) {
 
     task_result <- if (is_error) list(error = result, failed = TRUE) else list(result = result, failed = FALSE)
 
-    duration <- interval(started_at, finished_at) %>% as.interval()
+    duration <- lubridate::interval(started_at, finished_at) %>%
+        lubridate::as.interval()
 
     task_result_with_metadata <- c(
         task_result,
@@ -59,7 +60,7 @@ exec_task <- function(stage, task) {
 
     task_output_path <- get_task_output_path(stage$name, task$hash)
 
-    qsave(task_result_with_metadata, task_output_path)
+    qs::qsave(task_result_with_metadata, task_output_path)
 }
 
 #' R task executor. This is the default executor that runs tasks in the main R process.

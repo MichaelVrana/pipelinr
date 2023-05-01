@@ -102,7 +102,7 @@ collect <- function(iter) fold_iter(iter, list(), function(acc, curr) c(acc, lis
 #' collected == data.frame(numbers = 1:3, strings = c("a", "b", "c"))
 #' 
 collect_df <- function(iter) {
-    collect(iter) %>% bind_rows()
+    collect(iter) %>% dplyr::bind_rows()
 }
 
 #' Map values of an iterator using a function
@@ -155,7 +155,7 @@ filter_iter <- function(iter, predicate) {
 #' @param iter_like A value to check
 #' @export
 #' 
-is_iter <- function(iter_like) is_list(iter_like) && is_function(iter_like$next_iter) && is_logical(iter_like$done)
+is_iter <- function(iter_like) is.list(iter_like) && is.function(iter_like$next_iter) && is.logical(iter_like$done)
 
 #' Create a cross-product of two vectors
 #' @param iter1 An iterator
@@ -179,12 +179,12 @@ is_iter <- function(iter_like) is_list(iter_like) && is_function(iter_like$next_
 cross_iter <- function(...) {
     original_iters <- list(...)
 
-    if (some(original_iters, function(iter) iter$done)) return(make_empty_iter())
+    if (purrr::some(original_iters, function(iter) iter$done)) return(make_empty_iter())
 
     cross <- function(iters) {
-        if (every(iters, function(iter) iter$done)) return(make_empty_iter())
+        if (purrr::every(iters, function(iter) iter$done)) return(make_empty_iter())
         
-        undone_iters <- imap(iters, function(iter, idx) {
+        undone_iters <- purrr::imap(iters, function(iter, idx) {
             if (!iter$done) iter
             else original_iters[[idx]]
         })
@@ -192,7 +192,7 @@ cross_iter <- function(...) {
         next_iter <- function() {
             should_flip <- TRUE
 
-            next_iters <- map(undone_iters, function(iter) {
+            next_iters <- purrr::map(undone_iters, function(iter) {
                 if (!should_flip) return(iter)
 
                 next_iter <- iter$next_iter()
@@ -206,7 +206,7 @@ cross_iter <- function(...) {
             cross(next_iters)
         }
 
-        make_iter(value = map(undone_iters, function(iter) iter$value), next_iter = next_iter)
+        make_iter(value = purrr::map(undone_iters, function(iter) iter$value), next_iter = next_iter)
     }
 
     cross(original_iters)
@@ -228,16 +228,16 @@ cross_iter <- function(...) {
 zip_iter <- function(...) {
     iters <- list(...)
 
-    done <- every(iters, function(iter) iter$done)
+    done <- purrr::every(iters, function(iter) iter$done)
 
     if (done) {
         return(make_empty_iter())
     }
 
-    values <- map(iters, function(iter) iter$value)
+    values <- purrr::map(iters, function(iter) iter$value)
 
     next_iter <- function() {
-        do.call(zip_iter, map(iters, function(iter) iter$next_iter()))
+        do.call(zip_iter, purrr::map(iters, function(iter) iter$next_iter()))
     }
 
     make_iter(value = values, next_iter = next_iter)

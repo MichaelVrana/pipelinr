@@ -14,7 +14,7 @@ get_script_file_paths <- function() {
 
 get_basefile_args <- function() {
     script_paths <- get_script_file_paths() %>%
-        map(., function(path) {
+        purrr::map(., function(path) {
             dir <- dirname(path)
             name <- basename(path)
 
@@ -42,7 +42,7 @@ make_gnu_parallel_executor <- function(ssh_login_file = "", flags = character())
 
         stage_dir <- get_stage_dir(stage$name)
 
-        file.path(stage_dir, "body.qs") %>% qsave(task_body, .)
+        file.path(stage_dir, "body.qs") %>% qs::qsave(task_body, .)
 
         task_filenames <- fold_iter(task_iter, character(), function(acc, task) {
             c(acc, get_task_filename(task$hash))
@@ -75,7 +75,7 @@ make_gnu_parallel_executor <- function(ssh_login_file = "", flags = character())
 
         if (file.exists(job_log_path)) file.remove(job_log_path)
 
-        proc <- process$new(
+        proc <- processx::process$new(
             command = "parallel",
             args = parallel_args,
             wd = stage_dir,
@@ -85,7 +85,7 @@ make_gnu_parallel_executor <- function(ssh_login_file = "", flags = character())
         )
 
         proc_stdin <- proc$get_input_connection()
-        conn_write(proc_stdin, task_filenames)
+        processx::conn_write(proc_stdin, task_filenames)
         close(proc_stdin)
 
         task_count <- length(task_filenames)
@@ -96,7 +96,7 @@ make_gnu_parallel_executor <- function(ssh_login_file = "", flags = character())
             proc$wait(1000)
 
             tasks_completed <- if (file.exists(job_log_path)) {
-                read_file(job_log_path) %>%
+                readr::read_file(job_log_path) %>%
                     str_count(., "\n") - 1
             } else {
                 0

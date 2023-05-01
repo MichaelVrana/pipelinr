@@ -6,7 +6,7 @@ task_file_pattern <- ".*_out\\.qs$"
 
 #' Stage inputs constructor function. Should be used as the `inputs` parameter of a `stage` function.
 #' @export
-stage_inputs <- function(...) enquos(...)
+stage_inputs <- function(...) rlang::enquos(...)
 
 #' Pipeline stage constructor function
 #'
@@ -43,20 +43,13 @@ stage_outputs_iter_to_results_iter <- function(ouputs_iter) {
         map_iter(., function(output) output$outputs$result)
 }
 
-stage_hash <- function(stage) {
-    used_globals_and_packages <- find_used_globals_and_packages(stage$body)
-    list(
-        used_globals_and_packages = used_globals_and_packages,
-        body = stage$body,
-        input_quosures = stage$input_quosures
-    ) %>% hash()
-}
-
 find_child_stages <- function(stages, stage_name) {
     find_rec <- function(stage) {
-        direct_childs <- keep(stages, function(child_stage) has_element(child_stage$deps, stage$name))
+        direct_childs <- purrr::keep(stages, function(child_stage) {
+            purrr::has_element(child_stage$deps, stage$name)
+        })
 
-        map(direct_childs, find_rec) %>% reduce(., .init = stage$name, c)
+        purrr::map(direct_childs, find_rec) %>% purrr::reduce(., .init = stage$name, c)
     }
 
     find_rec(stages[[stage_name]]) %>% setdiff(., stage_name)
@@ -64,8 +57,8 @@ find_child_stages <- function(stages, stage_name) {
 
 find_parent_stages <- function(stages, stage_name) {
     find_rec <- function(stage) {
-        map(stage$deps, function(dep_name) find_rec(stages[[dep_name]])) %>%
-            reduce(., .init = stage$name, c)
+        purrr::map(stage$deps, function(dep_name) find_rec(stages[[dep_name]])) %>%
+            purrr::reduce(., .init = stage$name, c)
     }
 
     find_rec(stages[[stage_name]]) %>% setdiff(., stage_name)

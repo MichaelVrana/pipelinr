@@ -19,7 +19,7 @@ get_task_output_path <- function(stage_name, task_hash) {
 }
 
 read_task_output <- function(stage_name, task_hash) {
-    get_task_output_path(stage_name, task_hash) %>% qread()
+    get_task_output_path(stage_name, task_hash) %>% qs::qread()
 }
 
 task_filename_regex <- "^task_[a-f0-9]+\\.qs$"
@@ -32,12 +32,12 @@ stage_metadata_iter <- function(stage_name) {
         map_iter(., function(task_filename) {
             task_path <- file.path(stage_dir, task_filename)
 
-            task <- qread(task_path)
+            task <- qs::qread(task_path)
 
             output_path <- get_task_output_path(stage_name, task$hash)
 
             output <- if (file.exists(output_path)) {
-                qread(output_path)
+                qs::qread(output_path)
             } else {
                 list()
             }
@@ -54,7 +54,7 @@ stage_task_outputs_iter <- function(stage_name) {
     list.files(stage_dir, pattern = task_output_filename_regex) %>%
         vec_to_iter() %>%
         map_iter(., function(filename) {
-            file.path(stage_dir, filename) %>% qread()
+            file.path(stage_dir, filename) %>% qs::qread()
         })
 }
 
@@ -73,6 +73,6 @@ task_path_from_output_path <- function(task_output_path) {
 save_tasks <- function(stage_name, task_iter) {
     for_each_iter(task_iter, function(task) {
         path <- get_task_path(stage_name, task$hash)
-        qsave(task, path)
+        qs::qsave(task, path)
     })
 }

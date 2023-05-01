@@ -42,7 +42,7 @@ find_used_globals_and_packages <- function(fun) {
     find_used_globals_and_packages_rec <- function(fun, visited_globals = character()) {
         globals <- codetools::findGlobals(fun)
 
-        used_packages <- if (some(globals, is_ns_access_operator)) {
+        used_packages <- if (purrr::some(globals, is_ns_access_operator)) {
             body(fun) %>% find_used_namespaces()
         } else {
             character()
@@ -52,8 +52,8 @@ find_used_globals_and_packages <- function(fun) {
 
         fun_env <- environment(fun)
 
-        keep(globals, function(global) !has_element(visited_globals, global)) %>%
-            map(., function(global_name) {
+        purrr::keep(globals, function(global) !purrr::has_element(visited_globals, global)) %>%
+            purrr::map(., function(global_name) {
                 if (!exists(global_name, globalenv())) {
                     paste("Detected possible use of undeclared global", global_name) %>% warn()
                     return(c(empty_result))

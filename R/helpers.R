@@ -1,7 +1,7 @@
 library(purrr)
 
 partition <- function(iterable, predicate) {
-    reduce(iterable, function(acc, curr) {
+    purrr::reduce(iterable, function(acc, curr) {
         if (predicate(curr)) {
             list(true = append(acc$true, list(curr)), false = acc$false)
         } else {
@@ -11,7 +11,7 @@ partition <- function(iterable, predicate) {
 }
 
 find_symbols <- function(expr) {
-    if (is_syntactic_literal(expr)) {
+    if (rlang::is_syntactic_literal(expr)) {
         return(list())
     }
 
@@ -19,7 +19,7 @@ find_symbols <- function(expr) {
         return(list(as_string(expr)))
     }
 
-    map(as.list(expr), find_symbols) %>% purrr::flatten()
+    purrr::map(as.list(expr), find_symbols) %>% purrr::flatten()
 }
 
 without_name <- function(list, name) list[grep(name, names(list), invert = TRUE)]
@@ -27,14 +27,14 @@ without_name <- function(list, name) list[grep(name, names(list), invert = TRUE)
 merge_lists <- function(...) {
     lists <- list(...)
 
-    keys <- reduce(lists, function(acc, l) c(names(acc), names(l))) %>% unique()
+    keys <- purrr::reduce(lists, function(acc, l) c(names(acc), names(l))) %>% unique()
 
-    reduce(lists, function(acc, l) {
+    purrr::reduce(lists, function(acc, l) {
         if (is.null(acc)) {
             return(l)
         }
 
-        map2(acc[keys], l[keys], c) %>%
+        purrr::map2(acc[keys], l[keys], c) %>%
             set_names(keys)
     })
 }
@@ -59,7 +59,7 @@ set_names <- function(obj, names) {
     obj
 }
 
-to_stage_names <- function(stages) map_chr(stages, function(stage) stage$name)
+to_stage_names <- function(stages) purrr::map_chr(stages, function(stage) stage$name)
 
 stage_results_iter_from_symbol <- function(stage_symbol) {
     if (!is.symbol(stage_symbol)) stop("Invalid stage identifier")
@@ -77,7 +77,7 @@ stage_results_iter_from_symbol <- function(stage_symbol) {
 #' @examples
 #' read(stage_name)
 read <- function(stage_symbol) {
-    enexpr(stage_symbol) %>%
+    rlang::enexpr(stage_symbol) %>%
         stage_results_iter_from_symbol() %>%
         collect()
 }
@@ -88,7 +88,7 @@ read <- function(stage_symbol) {
 #' @examples
 #' read(stage_name)
 read_df <- function(stage_symbol) {
-    enexpr(stage_symbol) %>%
+    rlang::enexpr(stage_symbol) %>%
         stage_results_iter_from_symbol() %>%
         collect_df()
 }
@@ -109,7 +109,7 @@ stage_metadata_iter_from_symbol <- function(stage_symbol) {
 #' @examples
 #' metadata(stage_name)
 metadata <- function(stage_symbol) {
-    enexpr(stage_symbol) %>%
+    rlang::enexpr(stage_symbol) %>%
         stage_metadata_iter_from_symbol() %>%
         collect()
 }
@@ -120,7 +120,7 @@ metadata <- function(stage_symbol) {
 #' @examples
 #' metadata_df(stage_name)
 metadata_df <- function(stage_symbol) {
-    enexpr(stage_symbol) %>%
+    rlang::enexpr(stage_symbol) %>%
         stage_metadata_iter_from_symbol() %>%
         map_iter(., function(task_metadata) {
             task_metadata$result <- list(task_metadata$result)
@@ -128,3 +128,5 @@ metadata_df <- function(stage_symbol) {
         }) %>%
         collect_df()
 }
+
+is_empty <- function(obj) length(obj) == 0

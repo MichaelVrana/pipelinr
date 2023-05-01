@@ -20,26 +20,26 @@ find_unbound_body_args <- function(stage) {
 }
 
 find_deps <- function(input_quo, other_stage_names) {
-    inputs_expr <- quo_get_expr(input_quo)
+    inputs_expr <- rlang::quo_get_expr(input_quo)
 
     symbols <- find_symbols(inputs_expr)
 
-    keep(symbols, function(symbol) {
-        has_element(other_stage_names, symbol)
+    purrr::keep(symbols, function(symbol) {
+        purrr::has_element(other_stage_names, symbol)
     })
 }
 
 with_names <- function(stages) {
-    imap(stages, function(stage, stage_name) c(stage, name = stage_name))
+    purrr::imap(stages, function(stage, stage_name) c(stage, name = stage_name))
 }
 
 with_deps <- function(stages) {
     stage_names <- names(stages)
 
-    map(stages, function(stage) {
+    purrr::map(stages, function(stage) {
         other_stage_names <- setdiff(stage_names, stage$name)
 
-        deps <- map(stage$input_quosures, function(input_quo) find_deps(input_quo, other_stage_names)) %>%
+        deps <- purrr::map(stage$input_quosures, function(input_quo) find_deps(input_quo, other_stage_names)) %>%
             purrr::flatten() %>%
             unlist()
 
@@ -47,13 +47,15 @@ with_deps <- function(stages) {
 
         unknown_deps <- setdiff(deps %>% unname(), other_stage_names)
 
-        if (length(unknown_deps) > 0) {
+        if (!is_empty(unknown_deps)) {
             c("Unbound stage dependencies detected: ", unknown_deps) %>%
                 do.call(paste, .) %>%
                 stop()
         }
 
-        unbound_arg_quos <- map(unbound_args, function(arg) as.symbol(arg) %>% new_quosure(., env = empty_env())) %>% new_quosures()
+        unbound_arg_quos <- purrr::map(unbound_args, function(arg) {
+            as.symbol(arg) %>% rlang::new_quosure(., env = empty_env())
+        }) %>% rlang::new_quosures()
 
         stage$input_quosures <- c(stage$input_quosures, unbound_arg_quos)
         stage$deps <- c(deps, unbound_args) %>% unique()
@@ -83,7 +85,7 @@ topsort <- function(stages, sorted_stages = list()) {
 }
 
 with_stage_names <- function(stages) {
-    map_chr(stages, function(stage) stage$name) %>% set_names(stages, .)
+    purrr::map_chr(stages, function(stage) stage$name) %>% purrr::set_names(stages, .)
 }
 
 #' Create a pipeline. Pipelines consists of stages constructed by `stage`. Each argument must be named and must be a stage object.
