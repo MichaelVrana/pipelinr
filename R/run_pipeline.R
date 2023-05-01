@@ -187,9 +187,4 @@ make <- function(only = names(pipeline$stages),
 
         stage_executor(task_iter, stage = stage)
     })
-
-    get_pipeline_dir() %>%
-        list.dirs() %>%
-        basename() %>%
-        get_stage_outputs()
 }
