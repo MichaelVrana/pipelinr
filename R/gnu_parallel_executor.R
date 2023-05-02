@@ -81,7 +81,8 @@ make_gnu_parallel_executor <- function(ssh_login_file = "", flags = character())
             wd = stage_dir,
             stdout = "",
             stderr = "",
-            stdin = "|"
+            stdin = "|",
+            cleanup_tree = TRUE
         )
 
         proc_stdin <- proc$get_input_connection()
