@@ -6,7 +6,7 @@ test_that("Implicit dependency is correctly detected", {
         b = stage(function(a) a * 2)
     )
 
-    results <- make(pipeline = pipeline)
+    make(pipeline = pipeline, clean = TRUE)
 
-    expect_equal(results$results$b$value, c(2, 4, 6))
+    expect_equal(read(b), list(c(2, 4, 6)))
 })

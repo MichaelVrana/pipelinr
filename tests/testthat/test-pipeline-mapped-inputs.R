@@ -14,9 +14,8 @@ test_that("Pipeline evaluates mapped input", {
         })
     )
 
-    stage_results <- make(pipeline = pipeline)
+    make(pipeline = pipeline, clean = TRUE)
 
-    actual <- collect(stage_results$results$stage2)
 
-    expect_snapshot(actual)
+    expect_snapshot(read(stage2))
 })

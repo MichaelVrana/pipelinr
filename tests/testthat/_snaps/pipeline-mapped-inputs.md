@@ -1,7 +1,7 @@
 # Pipeline evaluates mapped input
 
     Code
-      actual
+      read(stage2)
     Output
       [[1]]
       [[1]]$number
