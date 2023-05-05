@@ -24,7 +24,7 @@ make_iter <- function(value, next_iter = make_empty_iter) {
 #' @export
 #' 
 vec_to_iter <- function(vec) {
-    if (is_empty(vec)) {
+    if (purrr::is_empty(vec)) {
         return(make_empty_iter())
     }
 

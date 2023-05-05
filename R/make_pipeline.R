@@ -11,7 +11,7 @@ find_unbound_body_args <- function(stage) {
 
     unbound <- setdiff(args, input_names)
 
-    if (is_empty(unbound)) {
+    if (purrr::is_empty(unbound)) {
         return(character())
     }
 
@@ -47,7 +47,7 @@ with_deps <- function(stages) {
 
         unknown_deps <- setdiff(deps %>% unname(), other_stage_names)
 
-        if (!is_empty(unknown_deps)) {
+        if (!purrr::is_empty(unknown_deps)) {
             c("Unbound stage dependencies detected: ", unknown_deps) %>%
                 do.call(paste, .) %>%
                 stop()
@@ -64,20 +64,20 @@ with_deps <- function(stages) {
 }
 
 topsort <- function(stages, sorted_stages = list()) {
-    if (is_empty(stages)) {
+    if (purrr::is_empty(stages)) {
         return(sorted_stages)
     }
 
     sorted_stage_names <- to_stage_names(sorted_stages)
 
     partitioned_stages <- partition(stages, function(stage) {
-        setdiff(stage$deps, sorted_stage_names) %>% is_empty()
+        setdiff(stage$deps, sorted_stage_names) %>% purrr::is_empty()
     })
 
     stages_without_deps <- partitioned_stages$true
     stages_with_deps <- partitioned_stages$false
 
-    if (is_empty(stages_without_deps)) {
+    if (purrr::is_empty(stages_without_deps)) {
         stop("Cycle in stage dependencies detected")
     }
 

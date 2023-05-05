@@ -4,7 +4,7 @@ library(qs)
 library(lubridate)
 
 process_captured_output <- function(output) {
-    if (is_empty(output)) {
+    if (purrr::is_empty(output)) {
         return("")
     }
 

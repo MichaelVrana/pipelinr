@@ -128,5 +128,3 @@ metadata_df <- function(stage_symbol) {
         }) %>%
         collect_df()
 }
-
-is_empty <- function(obj) length(obj) == 0

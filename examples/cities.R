@@ -1,4 +1,3 @@
-library(devtools)
 library(httr)
 library(jsonlite)
 library(dplyr)
@@ -16,7 +15,6 @@ get_cities <- function(country) {
         content() %>%
         pluck("data") %>%
         unlist() %>%
-        head(., n = 10) %>%
         data.frame(name = ., country = country)
 }
 
@@ -39,7 +37,7 @@ pipeline <- make_pipeline(
     turkish_cities = stage(function() get_cities("turkey")),
     #
     cities = stage(function(nigerian_cities, turkish_cities) {
-        rbind(nigerian_cities, turkish_cities)
+        bind_rows(nigerian_cities, turkish_cities)
     }),
     #
     city_populations = stage(function(cities) {

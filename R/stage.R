@@ -31,7 +31,7 @@ clear_stage_dir <- function(stage_name) {
         purrr::map(., function(filename) file.path(stage_dir, filename)) %>%
         unlist()
 
-    if (!is_empty(files_to_remove)) file.remove(files_to_remove)
+    if (!purrr::is_empty(files_to_remove)) file.remove(files_to_remove)
 }
 
 get_pipeline_dir <- function() getOption("pipelinr_dir", "pipeline") %>% normalizePath()
