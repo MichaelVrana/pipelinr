@@ -58,14 +58,14 @@ exec_task <- function() {
 
     task_result <- if (is_error) list(error = result, failed = TRUE) else list(result = result, failed = FALSE)
 
-    duration <- as.duration(interval(started_at, finished_at))
+    elapsed <- as.duration(interval(started_at, finished_at))
 
     task_result_with_metadata <- c(
         task_result,
         stdout = list(stdout),
         stderr = list(stderr),
         started_at = started_at,
-        duration = duration
+        elapsed = elapsed
     )
 
     result_filename <- paste(file_path_sans_ext(task_filename), "_out.qs", sep = "")

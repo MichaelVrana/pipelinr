@@ -47,7 +47,7 @@ exec_task <- function(stage, task) {
 
     task_result <- if (is_error) list(error = result, failed = TRUE) else list(result = result, failed = FALSE)
 
-    duration <- lubridate::interval(started_at, finished_at) %>%
+    elapsed <- lubridate::interval(started_at, finished_at) %>%
         lubridate::as.interval()
 
     task_result_with_metadata <- c(
@@ -55,7 +55,7 @@ exec_task <- function(stage, task) {
         stdout = list(stdout),
         stderr = list(stderr),
         started_at = started_at,
-        duration = duration
+        elapsed = elapsed
     )
 
     task_output_path <- get_task_output_path(stage$name, task$hash)
