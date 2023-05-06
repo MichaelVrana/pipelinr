@@ -141,10 +141,41 @@ get_stage_outputs <- function(stage_names) {
 }
 
 #' Executes a pipeline.
-#' @param pipeline A pipeline object constructed using `make_pipeline`.
+#' @param pipeline A pipeline object constructed using `make_pipeline`. By default it is loaded from the `pipeline.R` file.
+#' @param only  Stage filter. Pipeline will execute only the defined stages.
+#' @param from Stage filter. Pipeline will execute from the defined stages.
+#' @param filter Task filter. Selects which tasks will be evaluated.
 #' @param executor An executor function, defaults to R executor.
 #' @param print_inputs Boolean, defaults to `FALSE`. If true, stage inputs will be printed to using the `str` function.
+#' @param clean Boolean, defaults to FALSE. Before a stage is executed, all of it's tasks and task outputs will be deleted.
 #' @export
+#'
+#' @examples
+#'
+#' # Loads pipeline from `pipeline.R` and executes all unevaluated tasks in all stages
+#' make()
+#'
+#' # Executes only unevaluated tasks in the stage `s`
+#' make(s)
+#'
+#' # Equivalent to above
+#' make("s")
+#'
+#' # Executes only unevaluated tasks in the stages `s1` and `s2`
+#' make(c(s1, s2))
+#'
+#' # Executes only unevaluated tasks in the stages depending transitively on `s`
+#' make(from = s)
+#'
+#' # Executes all failed tasks in all stages
+#' make(filter = failed)
+#'
+#' # Executes a task with hash "480a8ffaf8703c12704916bee8e21eaa" in stage s
+#' make(s, filter = hash == "480a8ffaf8703c12704916bee8e21eaa")
+#'
+#' # Executes all unevaluated tasks in all stages in the provided pipeline
+#' make(pipeline = p)
+#'
 make <- function(only = names(pipeline$stages),
                  pipeline = load_pipeline(),
                  from = names(pipeline$stages),
