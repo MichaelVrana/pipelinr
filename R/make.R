@@ -12,7 +12,8 @@ eval_inputs <- function(stage_results, input_quosures) {
         filtered = filter_iter,
         crossed = cross_iter,
         chained = concat_iter,
-        zipped = zip_iter
+        zipped = zip_iter,
+        remapped = map_iter
     )
 
     purrr::map(input_quosures, function(input_quo) {
