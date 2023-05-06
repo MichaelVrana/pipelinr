@@ -1,7 +1,3 @@
-library(devtools)
-
-devtools::load_all()
-
 source_files <- function(package) {
     switch(package,
         p1 = c("a.R", "b.R", "c.R"),
@@ -18,9 +14,6 @@ source_coverage <- function(package, package_source) {
         e.R = .5
     )
 }
-
-Sys.setenv(PARALLEL_SSH = paste("ssh -F ", file.path(getwd(), "ssh_worker", "ssh.config"), sep = ""))
-executor <- file.path(getwd(), "ssh_worker", "nodefile") |> make_gnu_parallel_executor()
 
 pipeline <- make_pipeline(
     packages = stage(function() c("p1", "p2")),
@@ -41,16 +34,6 @@ pipeline <- make_pipeline(
         body = function(package_with_source) {
             cov <- source_coverage(package_with_source$package, package_with_source$src)
             data.frame(pkg = package_with_source$package, src = package_with_source$src, coverage = cov)
-        },
-        executor = executor
-    ),
-    #
-    metadata = stage(
-        inputs = stage_inputs(
-            package_source_coverage_whole = collect_df(package_source_coverage)
-        ),
-        body = function(package_source_coverage_whole) {}
+        }
     )
 )
-
-outputs <- make(pipeline = pipeline, print_inputs = TRUE, clean = TRUE)

@@ -1,11 +1,9 @@
-library(devtools)
 library(httr)
 library(jsonlite)
 library(dplyr)
 library(purrr)
 library(ggplot2)
-
-devtools::load_all()
+library(pipelinr)
 
 cities_by_country_url <- "https://countriesnow.space/api/v0.1/countries/cities"
 
@@ -79,5 +77,3 @@ pipeline <- make_pipeline(
         ggsave("total_city_population.png")
     })
 )
-
-make(pipeline = pipeline)
