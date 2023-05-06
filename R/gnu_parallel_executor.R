@@ -1,10 +1,3 @@
-library(rlang)
-library(purrr)
-library(qs)
-library(processx)
-library(readr)
-library(stringr)
-
 parallel_job_log_filename <- "joblog"
 
 get_script_file_paths <- function() {

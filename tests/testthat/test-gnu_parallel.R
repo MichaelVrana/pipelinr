@@ -18,9 +18,9 @@ test_that("Metadata function retrieves stage metadata", {
 
     make(pipeline = pipeline, clean = TRUE)
 
-    stdout <- read(metadata_stage) %>% map(., function(meta) meta$stdout)
+    stdout <- read(metadata_stage) %>% lapply(., function(meta) meta$stdout)
 
-    expect_equal(stdout, map(1:3, function(x) '[1] "This will be in stdout"'))
+    expect_equal(stdout, lapply(1:3, function(x) '[1] "This will be in stdout"'))
 })
 
 test_that("It correctly serializes function with it's globals", {

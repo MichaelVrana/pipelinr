@@ -1,5 +1,3 @@
-library(purrr)
-
 partition <- function(iterable, predicate) {
     purrr::reduce(iterable, function(acc, curr) {
         if (predicate(curr)) {
@@ -8,18 +6,6 @@ partition <- function(iterable, predicate) {
             list(true = acc$true, false = append(acc$false, list(curr)))
         }
     }, .init = list(true = list(), false = list()))
-}
-
-find_symbols <- function(expr) {
-    if (rlang::is_syntactic_literal(expr)) {
-        return(list())
-    }
-
-    if (is.symbol(expr)) {
-        return(list(rlang::as_string(expr)))
-    }
-
-    purrr::map(as.list(expr), find_symbols) %>% purrr::flatten()
 }
 
 without_name <- function(list, name) list[grep(name, names(list), invert = TRUE)]

@@ -1,6 +1,3 @@
-library(rlang)
-library(purrr)
-
 find_unbound_body_args <- function(stage) {
     args <- formals(stage$body) %>% names()
     input_names <- stage$input_quosures %>% names()
@@ -17,6 +14,18 @@ find_unbound_body_args <- function(stage) {
 
     names(unbound) <- as.character(unbound)
     unbound
+}
+
+find_symbols <- function(expr) {
+    if (rlang::is_syntactic_literal(expr)) {
+        return(list())
+    }
+
+    if (is.symbol(expr)) {
+        return(list(rlang::as_string(expr)))
+    }
+
+    purrr::map(as.list(expr), find_symbols) %>% purrr::flatten()
 }
 
 find_deps <- function(input_quo, other_stage_names) {

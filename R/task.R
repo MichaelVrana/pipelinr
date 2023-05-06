@@ -1,7 +1,3 @@
-library(qs)
-library(magrittr)
-library(rlang)
-
 get_task_filename <- function(task_hash) {
     paste("task_", task_hash, ".qs", sep = "")
 }

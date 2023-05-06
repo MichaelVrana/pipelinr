@@ -1,7 +1,3 @@
-library(utils)
-library(purrr)
-library(dplyr)
-
 #' Create an empty iterator returning no values.
 #' @export
 #'

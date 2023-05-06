@@ -1,8 +1,3 @@
-library(rlang)
-library(purrr)
-library(qs)
-library(lubridate)
-
 process_captured_output <- function(output) {
     if (purrr::is_empty(output)) {
         return("")

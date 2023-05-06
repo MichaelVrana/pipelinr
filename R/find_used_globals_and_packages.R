@@ -1,6 +1,3 @@
-library(codetools)
-library(purrr)
-
 is_ns_access_operator <- function(fun_name) fun_name == "::" || fun_name == ":::"
 
 is_ns_access_call <- function(ast) {

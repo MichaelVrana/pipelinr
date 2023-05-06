@@ -1,8 +1,3 @@
-library(rlang)
-library(purrr)
-library(readr)
-library(qs)
-
 create_metadata_function <- function(metadata_iters) {
     function(stage_symbol) {
         stage_name <- rlang::ensym(stage_symbol) %>% toString()
@@ -31,13 +26,13 @@ eval_inputs <- function(stage_results, input_quosures) {
     })
 }
 
-stage_tasks_iter <- function(stage, input_iters) {
+stage_tasks_iter_from_args <- function(stage, args_iter) {
     if (purrr::is_empty(stage$input_quosures)) {
         make_iter(list(args = list(), hash = rlang::hash(list())))
     } else {
-        do.call(zip_iter, input_iters) %>%
-            map_iter(., function(inputs) {
-                list(args = inputs, hash = rlang::hash(inputs))
+        do.call(zip_iter, args_iter) %>%
+            map_iter(., function(args) {
+                list(args = args, hash = rlang::hash(args))
             })
     }
 }
@@ -172,7 +167,7 @@ make <- function(only = names(pipeline$stages),
         if (clean) clear_stage_dir(stage$name)
 
         input_iters <- eval_inputs(stage_outputs, stage$input_quosures)
-        task_iter <- stage_tasks_iter(stage, input_iters) %>% filter_iter(., task_filter_factory(stage$name))
+        task_iter <- stage_tasks_iter_from_args(stage, input_iters) %>% filter_iter(., task_filter_factory(stage$name))
 
         if (task_iter$done) {
             paste("No unevaluated tasks found for stage ", stage$name, "\n", sep = "") %>% cat()

@@ -1,7 +1,3 @@
-library(rlang)
-library(purrr)
-suppressPackageStartupMessages(library(qs))
-
 task_file_pattern <- ".*_out\\.qs$"
 
 #' Stage inputs constructor function. Should be used as the `inputs` parameter of a `stage` function.

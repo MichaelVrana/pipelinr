@@ -18,7 +18,7 @@ test_that("Pipeline evaluates crossed inputs", {
         )
     )
 
-    make(pipeline = pipeline)
+    make(pipeline = pipeline, clean = TRUE)
 
     actual <- read(crossed)
 
