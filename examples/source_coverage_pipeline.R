@@ -15,7 +15,7 @@ source_coverage <- function(package, package_source) {
     )
 }
 
-pipeline <- make_pipeline(
+make_pipeline(
     packages = stage(function() c("p1", "p2")),
     #
     package_source = stage(

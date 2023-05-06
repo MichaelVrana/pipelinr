@@ -30,7 +30,7 @@ get_city_population <- function(city) {
         as.numeric()
 }
 
-pipeline <- make_pipeline(
+make_pipeline(
     nigerian_cities = stage(function() get_cities("nigeria")),
     #
     turkish_cities = stage(function() get_cities("turkey")),
